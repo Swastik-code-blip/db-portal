@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+{% block title %}— Employees{% endblock %}
+{% block nav_employees %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+.search-hero {
+  text-align: center;
+  padding: 40px 20px 32px;
+  position: relative;
+}
+.search-hero::before {
+  content: 'EMPLOYEE DATABASE';
+  position: absolute; top: 16px; left: 50%; transform: translateX(-50%);
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; color: rgba(0,245,255,0.15);
+  letter-spacing: 8px; white-space: nowrap;
+}
+.big-search {
+  display: flex; align-items: center;
+  background: var(--bg3);
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  padding: 6px 20px;
+  max-width: 600px; margin: 24px auto 0;
+  box-shadow: 0 0 30px rgba(0,245,255,0.1);
+  position: relative; z-index: 2;
+}
+.big-search input {
+  flex: 1; background: none; border: none; outline: none;
+  color: var(--text); font-family: 'Orbitron', monospace;
+  font-size: 16px; padding: 8px 0;
+  letter-spacing: 1px;
+}
+.big-search input::placeholder { color: var(--muted); font-size: 13px; }
+.search-btn-big {
+  background: var(--accent); color: var(--bg);
+  border: none; border-radius: 6px;
+  padding: 8px 16px; cursor: pointer;
+  font-family: 'Orbitron', monospace; font-size: 12px; font-weight: 700;
+  letter-spacing: 1px; transition: all 0.2s;
+}
+.search-btn-big:hover { box-shadow: 0 0 20px rgba(0,245,255,0.5); }
+
+.result-emp-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px;
+  margin-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+  from { opacity:0; transform:translateY(10px); }
+  to { opacity:1; transform:translateY(0); }
+}
+.result-emp-card::before {
+  content:''; position:absolute; top:0; left:0; bottom:0; width:4px;
+  background: linear-gradient(to bottom, var(--accent), var(--accent3));
+}
+.emp-header {
+  display: flex; align-items: center; gap: 18px; margin-bottom: 20px;
+}
+.emp-avatar {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(168,85,247,0.15);
+  border: 2px solid var(--accent3);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Orbitron', monospace; font-size: 20px; font-weight: 900;
+  color: var(--accent3);
+  flex-shrink: 0;
+}
+.emp-name { font-family: 'Orbitron', monospace; font-size: 18px; color: var(--accent); margin-bottom: 3px; }
+.emp-sub { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--muted); letter-spacing: 2px; }
+.emp-meta {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px; margin-bottom: 20px;
+  background: rgba(0,245,255,0.03); border-radius: 6px; padding: 14px;
+  border: 1px solid rgba(0,245,255,0.08);
+}
+.meta-item { display: flex; flex-direction: column; gap: 2px; }
+.meta-k { font-family: 'Share Tech Mono',monospace; font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; }
+.meta-v { font-size: 13px; color: var(--text); font-weight: 600; }
+
+.hw-assigned-title {
+  font-family: 'Orbitron', monospace; font-size: 12px;
+  color: var(--accent3); letter-spacing: 2px; margin-bottom: 12px;
+}
+.hw-assigned-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+}
+.hw-assign-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px;
+  transition: all 0.2s;
+  position: relative; overflow: hidden;
+}
+.hw-assign-card::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
+  background: linear-gradient(to right, transparent, var(--accent3), transparent);
+  opacity: 0.4;
+}
+.hw-assign-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.hw-assign-type {
+  font-family: 'Share Tech Mono', monospace; font-size: 9px;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--accent3); margin-bottom: 6px;
+}
+.hw-assign-name { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+.hw-assign-detail { font-family: 'Share Tech Mono', monospace; font-size: 10px; color: var(--muted); }
+.no-hw {
+  text-align: center; padding: 20px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px; color: var(--muted); letter-spacing: 2px;
+  background: var(--bg2); border-radius: 6px;
+}
+.scanning-text {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 12px; color: var(--accent); letter-spacing: 3px;
+  text-align: center; padding: 20px;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.cursor { display: inline-block; animation: blink 1s infinite; }
+
+.emp-table-section { margin-top: 32px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header" style="margin-bottom:20px;">
+  <div>
+    <div class="page-title">EMPLOYEE SEARCH</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// SEARCH BY ID OR NAME — FULL HARDWARE PROFILE REVEALED</div>
+  </div>
+  <a href="/employees/add/" class="btn btn-primary">+ ADD EMPLOYEE</a>
+</div>
+
+<!-- BIG SEARCH UI -->
+<div class="search-hero">
+  <div style="font-family:'Orbitron',monospace;font-size:11px;color:var(--muted);letter-spacing:4px;">ENTER EMPLOYEE ID OR NAME</div>
+  <div class="big-search">
+    <span style="color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:14px;margin-right:10px;">&gt;_</span>
+    <input type="text" id="live-search" placeholder="Search name or employee ID..." autocomplete="off">
+    <button class="search-btn-big" onclick="doSearch()">SCAN</button>
+  </div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:10px;letter-spacing:2px;">
+    RESULTS APPEAR INSTANTLY AS YOU TYPE
+  </div>
+</div>
+
+<!-- LIVE RESULTS -->
+<div id="search-results-area" style="max-width:900px;margin:0 auto;"></div>
+
+<!-- ALL EMPLOYEES TABLE -->
+<div class="emp-table-section">
+  <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);letter-spacing:2px;margin-bottom:16px;">
+    ALL EMPLOYEES <span style="color:var(--muted);font-size:12px;">({{ employees|length }} TOTAL)</span>
+  </div>
+  <div class="card">
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Emp ID</th><th>Name</th><th>Department</th><th>Designation</th><th>Email</th><th>HW Count</th><th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for emp in employees %}
+          <tr>
+            <td><span style="font-family:'Share Tech Mono',monospace;color:var(--accent);font-size:12px;">{{ emp.emp_id }}</span></td>
+            <td style="font-weight:700;">{{ emp.name }}</td>
+            <td>{{ emp.department }}</td>
+            <td style="color:var(--muted);font-size:13px;">{{ emp.designation }}</td>
+            <td style="font-size:12px;color:var(--accent3);">{{ emp.email }}</td>
+            <td>
+              <span style="font-family:'Orbitron',monospace;color:{% if emp.hw_count > 0 %}var(--green){% else %}var(--muted){% endif %};">{{ emp.hw_count }}</span>
+            </td>
+            <td>
+              <a href="/employees/{{ emp.pk }}/" class="btn btn-ghost" style="padding:5px 10px;font-size:11px;">VIEW</a>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="7">
+            <div class="empty-state"><div class="empty-state-icon">◈</div><div class="empty-state-text">NO EMPLOYEES REGISTERED</div></div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+let searchTimer = null;
+
+document.getElementById('live-search').addEventListener('input', function() {
+  clearTimeout(searchTimer);
+  const q = this.value.trim();
+  if (!q) {
+    document.getElementById('search-results-area').innerHTML = '';
+    return;
+  }
+  document.getElementById('search-results-area').innerHTML = `
+    <div class="scanning-text">
+      SCANNING DATABASE<span class="cursor">_</span>
+    </div>`;
+  searchTimer = setTimeout(() => doSearch(), 400);
+});
+
+document.getElementById('live-search').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') doSearch();
+});
+
+async function doSearch() {
+  const q = document.getElementById('live-search').value.trim();
+  if (!q) return;
+  const res = await fetch('/api/search/?q=' + encodeURIComponent(q));
+  const data = await res.json();
+  renderResults(data.results);
+}
+
+const HW_ICONS = {
+  Laptop:'💻', Camera:'📷', Printer:'🖨️', Monitor:'🖥️',
+  Mouse:'🖱️', Keyboard:'⌨️', Scanner:'📠', CPU:'🔧', Server:'🗄️'
+};
+
+function renderResults(results) {
+  const area = document.getElementById('search-results-area');
+  if (!results.length) {
+    area.innerHTML = `
+      <div style="text-align:center;padding:40px;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted);letter-spacing:2px;">
+        NO MATCH FOUND IN DATABASE
+      </div>`;
+    return;
+  }
+  area.innerHTML = `<div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);letter-spacing:3px;margin-bottom:16px;">// ${results.length} RECORD(S) FOUND</div>`;
+  results.forEach(emp => {
+    const initials = emp.name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+    let hwHtml = '';
+    if (emp.hardware.length === 0) {
+      hwHtml = `<div class="no-hw">NO HARDWARE ASSIGNED</div>`;
+    } else {
+      hwHtml = `<div class="hw-assigned-grid">` + emp.hardware.map(hw => `
+        <div class="hw-assign-card">
+          <div class="hw-assign-type">${HW_ICONS[hw.type]||''} ${hw.type}</div>
+          <div class="hw-assign-name">${hw.brand} ${hw.model}</div>
+          <div class="hw-assign-detail">
+            <div>ID: ${hw.hw_id}</div>
+            <div>S/N: ${hw.serial}</div>
+            ${hw.specs ? `<div style="margin-top:4px;color:var(--text);">${hw.specs}</div>` : ''}
+          </div>
+          <span class="badge badge-${hw.status}" style="margin-top:8px;">${hw.status}</span>
+        </div>`).join('') + `</div>`;
+    }
+    const card = document.createElement('div');
+    card.className = 'result-emp-card';
+    card.innerHTML = `
+      <div class="emp-header">
+        <div class="emp-avatar">${initials}</div>
+        <div>
+          <div class="emp-name">${emp.name}</div>
+          <div class="emp-sub">${emp.emp_id} &nbsp;·&nbsp; ${emp.designation}</div>
+        </div>
+        <a href="/employees/${emp.id}/" class="btn btn-ghost" style="margin-left:auto;font-size:11px;padding:6px 12px;">FULL PROFILE</a>
+      </div>
+      <div class="emp-meta">
+        <div class="meta-item"><div class="meta-k">Department</div><div class="meta-v">${emp.department}</div></div>
+        <div class="meta-item"><div class="meta-k">Email</div><div class="meta-v" style="color:var(--accent);font-size:12px;">${emp.email}</div></div>
+        <div class="meta-item"><div class="meta-k">Phone</div><div class="meta-v">${emp.phone}</div></div>
+        <div class="meta-item"><div class="meta-k">Hardware Units</div><div class="meta-v" style="color:var(--green);font-family:'Orbitron',monospace;">${emp.hardware.length}</div></div>
+      </div>
+      <div class="hw-assigned-title">// ASSIGNED HARDWARE</div>
+      ${hwHtml}
+    `;
+    area.appendChild(card);
+  });
+}
+</script>
+{% endblock %}

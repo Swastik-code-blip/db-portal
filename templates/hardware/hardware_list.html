@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}— Hardware{% endblock %}
+{% block nav_hardware %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">HARDWARE INVENTORY</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">
+      // {{ hardware|length }} UNITS
+      {% if user.has_location_filter %}<span style="color:var(--accent3);">— LOCATION: {{ user.location }}</span>{% endif %}
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <a href="/hardware/export/" class="btn btn-ghost" style="border-color:rgba(0,255,136,0.3);color:var(--green);font-size:11px;">↓ EXPORT</a>
+    {% if user.can_edit %}<a href="/hardware/add/" class="btn btn-primary">+ ADD HARDWARE</a>{% endif %}
+  </div>
+</div>
+
+<div class="filter-bar">
+  <form method="get" style="display:flex;gap:10px;flex-wrap:wrap;width:100%;">
+    <div class="search-box" style="flex:1;min-width:180px;">
+      <span class="search-icon">⌕</span>
+      <input type="text" name="search" value="{{ search }}" placeholder="Search ID, brand, model, serial...">
+    </div>
+    <select name="type" class="filter-select">
+      <option value="">All Types</option>
+      {% for t,l in hardware_types %}<option value="{{ t }}" {% if selected_type == t %}selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select>
+    <select name="status" class="filter-select">
+      <option value="">All Status</option>
+      {% for s,l in status_choices %}<option value="{{ s }}" {% if selected_status == s %}selected{% endif %}>{{ l }}</option>{% endfor %}
+    </select>
+    {% if not user.has_location_filter %}
+    <select name="location" class="filter-select">
+      <option value="">All Locations</option>
+      {% for loc in all_locations %}<option value="{{ loc }}" {% if selected_location == loc %}selected{% endif %}>📍 {{ loc }}</option>{% endfor %}
+    </select>
+    {% endif %}
+    <button type="submit" class="btn btn-primary" style="padding:8px 16px;">FILTER</button>
+    <a href="/hardware/" class="btn btn-ghost" style="padding:8px 16px;">RESET</a>
+  </form>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th><th>Type</th><th>Brand / Model</th><th>Serial</th>
+          <th>📍 Location</th><th>Assigned To</th><th>Status</th><th>Price</th><th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for hw in hardware %}
+        <tr>
+          <td><span style="font-family:'Share Tech Mono',monospace;color:var(--accent);font-size:12px;">{{ hw.hw_id }}</span></td>
+          <td><span class="badge badge-{{ hw.hardware_type|lower }}">{{ hw.hardware_type }}</span></td>
+          <td><div style="font-weight:700;">{{ hw.brand }}</div><div style="font-size:12px;color:var(--muted);">{{ hw.model_name }}</div></td>
+          <td><span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);">{{ hw.serial_number }}</span></td>
+          <td>
+            {% if hw.location %}
+            <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent3);">📍 {{ hw.location }}</span>
+            {% else %}<span style="color:var(--muted);font-size:12px;">—</span>{% endif %}
+          </td>
+          <td>
+            {% if hw.assigned_to %}
+            <a href="/employees/{{ hw.assigned_to.pk }}/" style="color:var(--accent3);text-decoration:none;font-weight:600;">{{ hw.assigned_to.name }}</a>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">{{ hw.assigned_to.emp_id }}</div>
+            {% else %}<span style="color:var(--muted);font-size:12px;">Unassigned</span>{% endif %}
+          </td>
+          <td><span class="badge badge-{{ hw.status }}">{{ hw.status }}</span></td>
+          <td style="font-family:'Share Tech Mono',monospace;font-size:12px;">₹{{ hw.price }}</td>
+          <td style="white-space:nowrap;">
+            <a href="/hardware/{{ hw.pk }}/" class="btn btn-ghost" style="padding:4px 8px;font-size:10px;">VIEW</a>
+            {% if user.can_edit %}<a href="/hardware/{{ hw.pk }}/edit/" class="btn btn-ghost" style="padding:4px 8px;font-size:10px;margin-left:4px;">EDIT</a>{% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="9">
+          <div class="empty-state"><div class="empty-state-icon">▣</div><div class="empty-state-text">NO HARDWARE FOUND</div></div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

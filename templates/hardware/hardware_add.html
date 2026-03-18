@@ -1,0 +1,363 @@
+{% extends "base.html" %}
+{% block title %}— Add Hardware{% endblock %}
+{% block nav_add_hw %}active{% endblock %}
+{% block extra_head %}
+<style>
+.type-selector{display:grid;grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:8px;margin-bottom:20px;}
+.type-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 6px;background:var(--bg3);border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;user-select:none;}
+.type-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,245,255,0.05);}
+.type-btn.selected{border-color:var(--accent);color:var(--accent);background:rgba(0,245,255,0.1);box-shadow:0 0 14px rgba(0,245,255,0.15);}
+.type-btn .t-icon{font-size:24px;}
+.form-fields-wrap{display:none;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.field-section{margin-bottom:4px;}
+.section-head{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:10px 0 8px;border-top:1px solid var(--border);margin-top:4px;}
+.prop-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+.prop-row input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;transition:border 0.2s;}
+.prop-row input:focus{border-color:var(--accent);}
+.remove-prop{background:rgba(255,59,59,0.1);border:1px solid rgba(255,59,59,0.2);color:var(--red);border-radius:4px;padding:7px 10px;cursor:pointer;font-size:12px;transition:all 0.15s;white-space:nowrap;}
+.remove-prop:hover{background:rgba(255,59,59,0.2);}
+.smart-props{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.smart-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:4px;cursor:pointer;background:rgba(0,245,255,0.07);border:1px solid rgba(0,245,255,0.18);font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:1px;transition:all 0.15s;}
+.smart-chip:hover{background:rgba(0,245,255,0.16);border-color:var(--accent);}
+.smart-chip.added{background:rgba(0,255,136,0.08);border-color:rgba(0,255,136,0.3);color:var(--green);}
+.field-na{opacity:0.25;pointer-events:none;position:relative;}
+.field-na::after{content:'N/A FOR THIS TYPE';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--red);letter-spacing:2px;white-space:nowrap;background:var(--bg3);padding:2px 8px;border-radius:3px;border:1px solid rgba(255,59,59,0.2);}
+.tag-req{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:1px 5px;border-radius:2px;margin-left:5px;background:rgba(0,245,255,0.1);color:var(--accent);border:1px solid rgba(0,245,255,0.2);}
+.tag-opt{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:1px 5px;border-radius:2px;margin-left:5px;background:rgba(100,116,139,0.12);color:var(--muted);border:1px solid rgba(100,116,139,0.2);}
+.tag-na{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:1px 5px;border-radius:2px;margin-left:5px;background:rgba(255,59,59,0.08);color:var(--red);border:1px solid rgba(255,59,59,0.18);}
+.selected-type-label{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.25);border-radius:6px;font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:2px;margin-bottom:20px;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">ADD HARDWARE</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// SELECT TYPE → FIELDS AUTO-ADJUST FOR THAT HARDWARE</div>
+  </div>
+  <div style="display:flex;gap:8px;">
+    <input type="file" id="excel-file" accept=".xlsx,.xls" style="display:none;" onchange="importExcel()">
+    <button class="btn btn-ghost" style="border-color:rgba(0,255,136,0.3);color:var(--green);font-size:11px;" onclick="document.getElementById('excel-file').click()">↑ BULK IMPORT</button>
+    <a href="/hardware/template/" class="btn btn-ghost" style="border-color:rgba(0,255,136,0.3);color:var(--green);font-size:11px;">↓ TEMPLATE</a>
+  </div>
+</div>
+
+<div id="import-result" style="display:none;margin-bottom:14px;padding:12px 16px;background:var(--bg3);border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:11px;border:1px solid var(--border);"></div>
+
+<div class="card" style="padding:28px;">
+  <form id="hw-form">
+    {% csrf_token %}
+    <input type="hidden" name="hardware_type" id="hw_type_val">
+
+    <!-- TYPE SELECTOR -->
+    <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:2px;margin-bottom:14px;">① SELECT HARDWARE TYPE</div>
+    <div class="type-selector">
+      <div class="type-btn" onclick="selectType(this,'Laptop')"><span class="t-icon">💻</span>Laptop</div>
+      <div class="type-btn" onclick="selectType(this,'Desktop')"><span class="t-icon">🖥</span>Desktop</div>
+      <div class="type-btn" onclick="selectType(this,'CPU')"><span class="t-icon">🔧</span>CPU Unit</div>
+      <div class="type-btn" onclick="selectType(this,'Server')"><span class="t-icon">🗄</span>Server</div>
+      <div class="type-btn" onclick="selectType(this,'Monitor')"><span class="t-icon">📺</span>Monitor</div>
+      <div class="type-btn" onclick="selectType(this,'Camera')"><span class="t-icon">📷</span>Camera</div>
+      <div class="type-btn" onclick="selectType(this,'Printer')"><span class="t-icon">🖨</span>Printer</div>
+      <div class="type-btn" onclick="selectType(this,'Scanner')"><span class="t-icon">📠</span>Scanner</div>
+      <div class="type-btn" onclick="selectType(this,'Mouse')"><span class="t-icon">🖱</span>Mouse</div>
+      <div class="type-btn" onclick="selectType(this,'Keyboard')"><span class="t-icon">⌨</span>Keyboard</div>
+      <div class="type-btn" onclick="selectType(this,'UPS')"><span class="t-icon">🔋</span>UPS</div>
+      <div class="type-btn" onclick="selectType(this,'Switch')"><span class="t-icon">🔀</span>Switch</div>
+      <div class="type-btn" onclick="selectType(this,'Router')"><span class="t-icon">📡</span>Router</div>
+      <div class="type-btn" onclick="selectType(this,'Other')"><span class="t-icon">📦</span>Other</div>
+    </div>
+
+    <!-- DYNAMIC FORM -->
+    <div class="form-fields-wrap" id="form-fields-wrap">
+
+      <!-- SELECTED TYPE LABEL -->
+      <div class="selected-type-label" id="type-label">
+        <span id="type-label-icon"></span>
+        <span id="type-label-text"></span>
+      </div>
+
+      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:2px;margin-bottom:16px;">② FILL IN DETAILS</div>
+
+      <!-- BASIC — always shown -->
+      <div class="section-head">// BASIC INFO</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Hardware ID <span class="tag-req">REQUIRED</span></label>
+          <input type="text" name="hw_id" class="form-control" id="f_hw_id" placeholder="Auto or e.g. HW-2024-001" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Brand <span class="tag-req">REQUIRED</span></label>
+          <input type="text" name="brand" class="form-control" id="f_brand" placeholder="e.g. Dell" required>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Model Name <span class="tag-req">REQUIRED</span></label>
+          <input type="text" name="model_name" class="form-control" id="f_model" placeholder="e.g. Inspiron 15" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Serial Number <span class="tag-req">REQUIRED</span></label>
+          <input type="text" name="serial_number" class="form-control" id="f_serial" placeholder="Unique serial number" required>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Location <span class="tag-opt">OPTIONAL</span></label>
+          {% if user.has_location_filter %}
+          <input type="text" name="location" class="form-control" value="{{ user.location }}" readonly style="opacity:0.6;">
+          {% else %}
+          <input type="text" name="location" class="form-control" placeholder="e.g. Head Office" list="loc-list">
+          <datalist id="loc-list">{% for loc in all_locations %}<option value="{{ loc }}">{% endfor %}</datalist>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          <label class="form-label">Assign to Employee <span class="tag-opt">OPTIONAL</span></label>
+          <select name="assigned_to" class="form-control">
+            <option value="">-- Not Assigned --</option>
+            {% for emp in employees %}<option value="{{ emp.pk }}">{{ emp.emp_id }} — {{ emp.name }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Purchase Date <span class="tag-req">REQUIRED</span></label>
+          <input type="date" name="purchase_date" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <select name="status" class="form-control">
+            {% for s,l in status_choices %}<option value="{{ s }}">{{ l }}</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- PURCHASE INFO -->
+      <div class="section-head">// PURCHASE INFO</div>
+      <div class="grid-2">
+        <div class="form-group" id="fg_price">
+          <label class="form-label">Price (₹) <span class="tag-opt" id="price_tag">OPTIONAL</span></label>
+          <input type="number" name="price" class="form-control" placeholder="0" step="0.01">
+        </div>
+        <div class="form-group" id="fg_warranty">
+          <label class="form-label">Warranty Expiry <span id="warranty_tag" class="tag-opt">OPTIONAL</span></label>
+          <input type="date" name="warranty_expiry" class="form-control" id="f_warranty">
+        </div>
+      </div>
+
+      <!-- SPECS — only for complex hardware -->
+      <div id="fg_specs_section">
+        <div class="section-head">// SPECIFICATIONS</div>
+        <div class="form-group">
+          <label class="form-label">Specifications <span class="tag-opt">OPTIONAL</span></label>
+          <textarea name="specifications" class="form-control" rows="2" id="f_specs" placeholder="Brief summary..."></textarea>
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="form-group" style="margin-top:4px;">
+        <label class="form-label">Notes <span class="tag-opt">OPTIONAL</span></label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Any additional notes..."></textarea>
+      </div>
+
+      <!-- SMART PROPERTIES -->
+      <div id="fg_props_section">
+        <div class="section-head">// TECHNICAL PROPERTIES</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;">CLICK TO ADD PROPERTY:</div>
+        <div class="smart-props" id="smart-chips"></div>
+        <div id="props-container"></div>
+        <button type="button" class="btn btn-ghost" style="padding:5px 12px;font-size:10px;margin-top:4px;" onclick="addProp('','')">+ CUSTOM PROPERTY</button>
+      </div>
+
+      <!-- SUBMIT -->
+      <div style="display:flex;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+        <button type="submit" class="btn btn-primary" id="submit-btn">
+          <span id="btn-text">+ ADD TO INVENTORY</span>
+          <span id="btn-loader" class="loader" style="display:none;"></span>
+        </button>
+        <a href="/hardware/" class="btn btn-ghost">CANCEL</a>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const TYPES = {
+  Laptop:{icon:'💻',brand:'Dell, HP, Lenovo, Asus',model:'e.g. Inspiron 15 3520',warranty:true,specs:true,specsHint:'e.g. Intel i5 12th Gen, 8GB RAM, 512GB SSD, Win 11',props:['RAM','Processor (CPU)','Storage','Operating System','Display Size','Battery','Graphics Card','WiFi','Bluetooth','USB Ports','Weight (kg)']},
+  Desktop:{icon:'🖥',brand:'HP, Dell, Assembled',model:'e.g. EliteDesk 800 G9',warranty:true,specs:true,specsHint:'e.g. Intel i5, 8GB RAM, 256GB SSD + 1TB HDD',props:['RAM','Processor (CPU)','Storage','Operating System','Motherboard','Graphics Card','Power Supply','Cabinet','Form Factor']},
+  CPU:{icon:'🔧',brand:'Assembled, Dell, HP',model:'e.g. Workstation WS-01',warranty:true,specs:true,specsHint:'e.g. Ryzen 5, 16GB RAM, custom build',props:['Processor (CPU)','RAM','Storage','Motherboard','Operating System','Power Supply','Cabinet','IP Address','GPU']},
+  Server:{icon:'🗄',brand:'Dell, HP, IBM, Lenovo',model:'e.g. PowerEdge R740',warranty:true,specs:true,specsHint:'e.g. Dual Xeon, 64GB ECC RAM, 4TB RAID-5',props:['CPU','RAM','Storage (RAID)','Operating System','IP Address','Rack Unit','Network Ports','iDRAC/iLO IP','Power Supplies','Uptime SLA']},
+  Monitor:{icon:'📺',brand:'LG, Samsung, Dell, BenQ',model:'e.g. 27UK850-W',warranty:true,specs:true,specsHint:'e.g. 27 inch 4K IPS 60Hz',props:['Screen Size','Resolution','Panel Type','Refresh Rate','Ports','Response Time (ms)','Brightness (nits)','HDR Support']},
+  Camera:{icon:'📷',brand:'Canon, Nikon, Sony',model:'e.g. EOS 200D Mark II',warranty:true,specs:true,specsHint:'e.g. 24.1MP DSLR with 18-55mm kit lens',props:['Megapixels','Sensor Type','Lens Kit','Video Resolution','Battery Model','Memory Card','Image Stabilization','Connectivity']},
+  Printer:{icon:'🖨',brand:'HP, Epson, Canon, Brother',model:'e.g. LaserJet Pro M404',warranty:true,specs:true,specsHint:'e.g. A4 Mono Laser, 38ppm, USB + Network',props:['Print Type','Speed (ppm)','Connectivity','Paper Size','Color or Mono','Toner/Ink Model','Duty Cycle','Network Ready']},
+  Scanner:{icon:'📠',brand:'Epson, Canon, Fujitsu',model:'e.g. Perfection V39',warranty:true,specs:true,specsHint:'e.g. Flatbed A4, 4800 DPI, USB',props:['Scanner Type','Resolution (DPI)','Scan Size','Connectivity','ADF Capacity','Color Depth']},
+  Mouse:{icon:'🖱',brand:'Logitech, HP, Dell',model:'e.g. MX Master 3',warranty:false,specs:false,specsHint:'',props:['DPI','Connectivity','Number of Buttons','Color','Wired/Wireless']},
+  Keyboard:{icon:'⌨',brand:'Logitech, HP, Zebronics',model:'e.g. MK710',warranty:false,specs:false,specsHint:'',props:['Switch Type','Connectivity','Layout','Backlight','Language','Wired/Wireless']},
+  UPS:{icon:'🔋',brand:'APC, Microtek, Luminous',model:'e.g. Back-UPS 1500VA',warranty:true,specs:true,specsHint:'e.g. 1500VA 865W, 25min runtime, 8 outlets',props:['Capacity (VA)','Wattage (W)','Runtime at 50%','Number of Outlets','Battery Type','Display Type']},
+  Switch:{icon:'🔀',brand:'Cisco, TP-Link, D-Link',model:'e.g. SG300-28P',warranty:true,specs:true,specsHint:'e.g. 24-port Gigabit managed switch',props:['Number of Ports','Port Speed','Managed/Unmanaged','IP Address','VLAN Support','PoE Support','Rack Mountable']},
+  Router:{icon:'📡',brand:'Cisco, TP-Link, MikroTik',model:'e.g. RV340',warranty:true,specs:true,specsHint:'e.g. Dual WAN Gigabit VPN Router',props:['IP Address','WAN Ports','LAN Ports','WiFi Band','Max Throughput','VPN Support','Firmware Version']},
+  Other:{icon:'📦',brand:'Any brand',model:'Model name',warranty:true,specs:true,specsHint:'Describe the hardware...',props:['Capacity','Connectivity','Power Input','Color','Weight']},
+};
+
+const addedChips = new Set();
+let propCount = 0;
+
+function selectType(btn, type) {
+  // Deselect all buttons
+  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+
+  const cfg = TYPES[type];
+  document.getElementById('hw_type_val').value = type;
+
+  // Update type label
+  document.getElementById('type-label-icon').textContent = cfg.icon;
+  document.getElementById('type-label-text').textContent = type.toUpperCase() + ' SELECTED';
+
+  // Update placeholders
+  document.getElementById('f_brand').placeholder = cfg.brand;
+  document.getElementById('f_model').placeholder = cfg.model;
+
+  // WARRANTY field
+  const fgWarranty = document.getElementById('fg_warranty');
+  const warrantyInput = document.getElementById('f_warranty');
+  const warrantyTag = document.getElementById('warranty_tag');
+  if (cfg.warranty) {
+    fgWarranty.style.opacity = '1';
+    fgWarranty.style.pointerEvents = 'auto';
+    warrantyInput.disabled = false;
+    warrantyTag.textContent = 'OPTIONAL';
+    warrantyTag.className = 'tag-opt';
+  } else {
+    fgWarranty.style.opacity = '0.25';
+    fgWarranty.style.pointerEvents = 'none';
+    warrantyInput.disabled = true;
+    warrantyInput.value = '';
+    warrantyTag.textContent = 'N/A';
+    warrantyTag.className = 'tag-na';
+  }
+
+  // SPECS section
+  const specsSection = document.getElementById('fg_specs_section');
+  const specsTA = document.getElementById('f_specs');
+  if (cfg.specs) {
+    specsSection.style.display = 'block';
+    specsTA.disabled = false;
+    specsTA.placeholder = cfg.specsHint;
+  } else {
+    specsSection.style.display = 'none';
+    specsTA.disabled = true;
+    specsTA.value = '';
+  }
+
+  // SMART PROPERTY CHIPS
+  addedChips.clear();
+  document.getElementById('props-container').innerHTML = '';
+  propCount = 0;
+  const chipsWrap = document.getElementById('smart-chips');
+  chipsWrap.innerHTML = '';
+  cfg.props.forEach(p => {
+    const chip = document.createElement('span');
+    chip.className = 'smart-chip';
+    chip.id = 'chip-' + p.replace(/[^a-z0-9]/gi, '_');
+    chip.innerHTML = `+ ${p}`;
+    chip.onclick = () => {
+      if (addedChips.has(p)) return;
+      addedChips.add(p);
+      chip.classList.add('added');
+      chip.innerHTML = `✓ ${p}`;
+      addProp(p, '');
+    };
+    chipsWrap.appendChild(chip);
+  });
+
+  // Show the form
+  const wrap = document.getElementById('form-fields-wrap');
+  wrap.style.display = 'block';
+
+  // Smooth scroll to form
+  setTimeout(() => {
+    wrap.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 100);
+}
+
+function addProp(key, val) {
+  propCount++;
+  const id = 'prop-' + propCount;
+  const div = document.createElement('div');
+  div.className = 'prop-row';
+  div.id = id;
+  div.innerHTML = `
+    <input type="text" name="prop_key[]" value="${key}" placeholder="Property name (e.g. RAM)"
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;flex:1;transition:border 0.2s;"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+    <input type="text" name="prop_val[]" value="${val}" placeholder="Value (e.g. 16GB DDR4)"
+      style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;flex:1;transition:border 0.2s;"
+      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
+    <button type="button" class="remove-prop" onclick="removeProp('${id}','${key}')">✕</button>`;
+  document.getElementById('props-container').appendChild(div);
+  if (key) {
+    setTimeout(() => div.querySelector('[name="prop_val[]"]').focus(), 50);
+  }
+}
+
+function removeProp(id, key) {
+  document.getElementById(id).remove();
+  if (key) {
+    addedChips.delete(key);
+    const chipId = 'chip-' + key.replace(/[^a-z0-9]/gi, '_');
+    const chip = document.getElementById(chipId);
+    if (chip) {
+      chip.classList.remove('added');
+      chip.innerHTML = `+ ${key}`;
+    }
+  }
+}
+
+document.getElementById('hw-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const type = document.getElementById('hw_type_val').value;
+  if (!type) { showToast('Please select a hardware type first!', 'error'); return; }
+  document.getElementById('btn-text').style.display = 'none';
+  document.getElementById('btn-loader').style.display = 'inline-block';
+  document.getElementById('submit-btn').disabled = true;
+  const fd = new FormData(this);
+  const res = await fetch('/hardware/add/', {method:'POST', body:fd});
+  const d = await res.json();
+  if (d.success) {
+    showToast('// ' + type.toUpperCase() + ' ADDED: ' + d.hw_id);
+    setTimeout(() => window.location.href = '/hardware/', 1300);
+  } else {
+    showToast('ERROR: ' + d.error, 'error');
+    document.getElementById('btn-text').style.display = 'inline';
+    document.getElementById('btn-loader').style.display = 'none';
+    document.getElementById('submit-btn').disabled = false;
+  }
+});
+
+async function importExcel() {
+  const file = document.getElementById('excel-file').files[0];
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('excel_file', file);
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  showToast('// IMPORTING DATA...', 'warn');
+  const res = await fetch('/hardware/import/', {method:'POST', body:fd});
+  const d = await res.json();
+  const box = document.getElementById('import-result');
+  box.style.display = 'block';
+  if (d.success) {
+    box.style.color = 'var(--green)';
+    box.innerHTML = `✓ IMPORT COMPLETE — Added: ${d.added} | Skipped (duplicate): ${d.skipped}` + (d.errors.length ? `<br><span style="color:var(--amber)">Issues: ${d.errors.slice(0,3).join(' | ')}</span>` : '');
+    showToast(`// IMPORTED ${d.added} RECORDS`);
+  } else {
+    box.style.color = 'var(--red)';
+    box.innerHTML = '✗ IMPORT FAILED: ' + d.error;
+    showToast('IMPORT FAILED', 'error');
+  }
+}
+</script>
+{% endblock %}

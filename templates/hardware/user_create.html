@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}— Create User{% endblock %}
+{% block nav_user_create %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="color:var(--accent3);">CREATE USER</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// REGISTER NEW PORTAL USER WITH ROLE &amp; LOCATION</div>
+  </div>
+</div>
+<div class="card" style="max-width:620px;padding:30px;">
+  <form id="user-form">
+    {% csrf_token %}
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Username *</label><input type="text" name="username" class="form-control" placeholder="login_name" required></div>
+      <div class="form-group"><label class="form-label">Password *</label><input type="password" name="password" class="form-control" placeholder="Strong password" required></div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">First Name</label><input type="text" name="first_name" class="form-control" placeholder="First name"></div>
+      <div class="form-group"><label class="form-label">Last Name</label><input type="text" name="last_name" class="form-control" placeholder="Last name"></div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Email</label><input type="email" name="email" class="form-control" placeholder="user@dainikbhaskar.com"></div>
+      <div class="form-group"><label class="form-label">Phone</label><input type="text" name="phone" class="form-control" placeholder="+91 XXXXX XXXXX"></div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Department</label><input type="text" name="department" class="form-control" placeholder="e.g. IT, Editorial"></div>
+      <div class="form-group">
+        <label class="form-label">Role *</label>
+        <select name="role" class="form-control" required>
+          <option value="viewer">Viewer — Read only</option>
+          <option value="editor">Editor — Can add/edit</option>
+          <option value="admin">Admin — User panel access</option>
+          <option value="superadmin">Super Admin — Full access</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">📍 Location Restriction</label>
+      <div style="display:flex;gap:8px;">
+        <select name="location" class="form-control">
+          <option value="">All Locations (no restriction)</option>
+          {% for loc in all_locations %}
+          <option value="{{ loc }}">📍 {{ loc }}</option>
+          {% endfor %}
+        </select>
+        <input type="text" name="location_custom" class="form-control" placeholder="Or type new location..." style="flex:1;" oninput="document.querySelector('[name=location]').value=''">
+      </div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:5px;letter-spacing:1px;">Leave blank = user sees ALL locations. Set location = user only sees that location's hardware.</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:8px;">
+      <button type="submit" class="btn btn-purple" id="submit-btn">
+        <span id="btn-text">CREATE USER</span>
+        <span id="btn-loader" class="loader" style="display:none;border-top-color:#fff;"></span>
+      </button>
+      <a href="/users/" class="btn btn-ghost">CANCEL</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.getElementById('user-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  document.getElementById('btn-text').style.display='none';
+  document.getElementById('btn-loader').style.display='inline-block';
+  const fd = new FormData(this);
+  // If custom location typed, use that
+  const custom = fd.get('location_custom').trim();
+  if(custom) fd.set('location', custom);
+  fd.delete('location_custom');
+  const res = await fetch('/users/create/',{method:'POST',body:fd});
+  const d = await res.json();
+  if(d.success){ showToast('// USER CREATED'); setTimeout(()=>window.location.href='/users/',1200); }
+  else{ showToast('ERROR: '+d.error,'error'); document.getElementById('btn-text').style.display='inline'; document.getElementById('btn-loader').style.display='none'; }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}— Users{% endblock %}
+{% block nav_users %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="color:var(--accent3);">USER MANAGEMENT</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// ROLES · LOCATIONS · ACCESS CONTROL</div>
+  </div>
+  {% if user.is_superadmin_role %}<a href="/users/create/" class="btn btn-purple">+ CREATE USER</a>{% endif %}
+</div>
+
+<!-- LOCATION INFO BOX -->
+<div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.2);border-radius:8px;padding:16px 20px;margin-bottom:22px;display:flex;align-items:center;gap:14px;">
+  <div style="font-size:24px;">📍</div>
+  <div>
+    <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent3);letter-spacing:2px;margin-bottom:4px;">LOCATION-BASED ACCESS</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;">
+      Set a location on a user to restrict them to only see/edit hardware from that location.<br>
+      Leave blank to give access to ALL locations.
+    </div>
+  </div>
+  <div style="margin-left:auto;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);">
+    Known locations: {% for loc in all_locations %}<span style="color:var(--accent3);">{{ loc }}</span>{% if not forloop.last %}, {% endif %}{% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Username</th><th>Full Name</th><th>Department</th><th>Role</th>
+        <th>📍 Location (Restriction)</th><th>Status</th>
+        {% if user.is_superadmin_role %}<th>Actions</th>{% endif %}
+      </tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><span style="font-family:'Share Tech Mono',monospace;color:var(--accent);">{{ u.username }}</span></td>
+          <td style="font-weight:700;">{{ u.get_full_name|default:"—" }}</td>
+          <td style="font-size:12px;color:var(--muted);">{{ u.department|default:"—" }}</td>
+          <td><span class="role-pill role-{{ u.role }}">{{ u.role }}</span></td>
+          <td>
+            {% if u.location %}
+            <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent3);background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);padding:2px 10px;border-radius:3px;">📍 {{ u.location }}</span>
+            {% else %}
+            <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--green);background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.15);padding:2px 10px;border-radius:3px;">ALL LOCATIONS</span>
+            {% endif %}
+          </td>
+          <td>{% if u.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-inactive">Disabled</span>{% endif %}</td>
+          {% if user.is_superadmin_role %}
+          <td>
+            {% if u != user %}
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+              <button class="btn btn-ghost" style="padding:4px 8px;font-size:10px;" onclick="toggleUser({{ u.pk }}, this)">{% if u.is_active %}DISABLE{% else %}ENABLE{% endif %}</button>
+              <select class="filter-select" style="padding:4px 8px;font-size:11px;" onchange="changeRole({{ u.pk }}, this.value, this)">
+                <option value="">Role...</option>
+                <option value="viewer" {% if u.role == 'viewer' %}selected{% endif %}>Viewer</option>
+                <option value="editor" {% if u.role == 'editor' %}selected{% endif %}>Editor</option>
+                <option value="admin" {% if u.role == 'admin' %}selected{% endif %}>Admin</option>
+                <option value="superadmin" {% if u.role == 'superadmin' %}selected{% endif %}>Super Admin</option>
+              </select>
+              <select class="filter-select" style="padding:4px 8px;font-size:11px;" onchange="changeLocation({{ u.pk }}, this.value)">
+                <option value="" {% if not u.location %}selected{% endif %}>All Locations</option>
+                {% for loc in all_locations %}
+                <option value="{{ loc }}" {% if u.location == loc %}selected{% endif %}>📍 {{ loc }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            {% else %}<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">YOU</span>{% endif %}
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ROLE LEGEND -->
+<div style="margin-top:18px;padding:16px 20px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;">
+  <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent3);letter-spacing:2px;margin-bottom:12px;">ROLE PERMISSIONS</div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;">
+    <div><span class="role-pill role-viewer">Viewer</span><div style="font-size:12px;color:var(--muted);margin-top:6px;">View hardware of their location only</div></div>
+    <div><span class="role-pill role-editor">Editor</span><div style="font-size:12px;color:var(--muted);margin-top:6px;">Add/edit/status-change their location's hardware</div></div>
+    <div><span class="role-pill role-admin">Admin</span><div style="font-size:12px;color:var(--muted);margin-top:6px;">Editor + view user panel + change locations</div></div>
+    <div><span class="role-pill role-superadmin">Super Admin</span><div style="font-size:12px;color:var(--muted);margin-top:6px;">Full access — all locations, all features</div></div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function getCsrf(){ return document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1]; }
+
+async function toggleUser(pk, btn){
+  const res = await fetch(`/users/${pk}/toggle/`,{method:'POST',headers:{'X-CSRFToken':getCsrf()}});
+  const d = await res.json();
+  if(d.success){ showToast('// USER STATUS UPDATED'); btn.textContent=d.active?'DISABLE':'ENABLE'; }
+  else showToast('ERROR: '+d.error,'error');
+}
+
+async function changeRole(pk, role, sel){
+  if(!role)return;
+  const fd=new FormData(); fd.append('role',role);
+  const res=await fetch(`/users/${pk}/role/`,{method:'POST',body:fd,headers:{'X-CSRFToken':getCsrf()}});
+  const d=await res.json();
+  if(d.success) showToast('// ROLE UPDATED → '+role.toUpperCase());
+  else showToast('ERROR: '+d.error,'error');
+}
+
+async function changeLocation(pk, loc){
+  const fd=new FormData(); fd.append('location',loc);
+  const res=await fetch(`/users/${pk}/location/`,{method:'POST',body:fd,headers:{'X-CSRFToken':getCsrf()}});
+  const d=await res.json();
+  if(d.success) showToast('// LOCATION SET: '+(d.location||'ALL LOCATIONS'));
+  else showToast('ERROR: '+d.error,'error');
+}
+</script>
+{% endblock %}

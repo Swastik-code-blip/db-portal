@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}— Dashboard{% endblock %}
+{% block nav_dashboard %}active{% endblock %}
+{% block extra_head %}
+<style>
+.type-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-top:14px;}
+.type-tile{background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:14px;text-align:center;transition:all 0.2s;cursor:pointer;text-decoration:none;display:block;position:relative;overflow:hidden;}
+.type-tile:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,245,255,0.08);}
+.type-emoji{font-size:24px;margin-bottom:6px;}
+.type-name{font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;}
+.type-count{font-family:'Orbitron',monospace;font-size:18px;font-weight:700;color:var(--accent);margin-top:3px;}
+.recent-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.import-zone{border:2px dashed rgba(0,255,136,0.25);border-radius:8px;padding:20px;text-align:center;transition:all 0.2s;cursor:pointer;}
+.import-zone:hover,.import-zone.dragover{border-color:var(--green);background:rgba(0,255,136,0.04);}
+.import-zone-icon{font-size:32px;margin-bottom:8px;opacity:0.6;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="animation:glitch 5s infinite;">CONTROL CENTER</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// DAINIK BHASKAR HARDWARE MANAGEMENT PORTAL</div>
+  </div>
+  <div style="text-align:right;">
+    <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent3);">{{ user.get_full_name|default:user.username|upper }}</div>
+    <span class="role-pill role-{{ user.role }}">{{ user.role }}</span>
+  </div>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div style="font-size:22px;margin-bottom:8px;">▣</div>
+    <div class="stat-value">{{ total_hw }}</div>
+    <div class="stat-label">Total Hardware</div>
+  </div>
+  <div class="stat-card">
+    <div style="font-size:22px;margin-bottom:8px;color:var(--green);">◉</div>
+    <div class="stat-value" style="color:var(--green);">{{ active_hw }}</div>
+    <div class="stat-label">Active Units</div>
+  </div>
+  <div class="stat-card">
+    <div style="font-size:22px;margin-bottom:8px;color:var(--accent3);">◈</div>
+    <div class="stat-value" style="color:var(--accent3);">{{ total_emp }}</div>
+    <div class="stat-label">Employees</div>
+  </div>
+  <div class="stat-card">
+    <div style="font-size:22px;margin-bottom:8px;color:var(--red);">⊗</div>
+    <div class="stat-value" style="color:var(--red);">{{ total_trash }}</div>
+    <div class="stat-label">Trashed</div>
+  </div>
+</div>
+
+<!-- HARDWARE TYPES GRID -->
+<div class="card" style="padding:22px;margin-bottom:20px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:2px;">HARDWARE CATEGORIES</div>
+    <div style="display:flex;gap:8px;">
+      <a href="/hardware/export/" class="btn btn-ghost" style="font-size:10px;padding:5px 10px;border-color:rgba(0,255,136,0.3);color:var(--green);">↓ EXPORT EXCEL</a>
+      <a href="/hardware/" class="btn btn-ghost" style="font-size:10px;padding:5px 10px;">VIEW ALL</a>
+    </div>
+  </div>
+  <div class="type-grid">
+    {% for type_key, count in hw_by_type.items %}
+    <a href="/hardware/?type={{ type_key }}" class="type-tile">
+      <div class="type-emoji">{% if type_key == "Laptop" %}💻{% elif type_key == "Desktop" %}🖥{% elif type_key == "CPU" %}🔧{% elif type_key == "Server" %}🗄{% elif type_key == "Monitor" %}📺{% elif type_key == "Camera" %}📷{% elif type_key == "Printer" %}🖨{% elif type_key == "Scanner" %}📠{% elif type_key == "Mouse" %}🖱{% elif type_key == "Keyboard" %}⌨{% elif type_key == "UPS" %}🔋{% elif type_key == "Switch" %}🔀{% elif type_key == "Router" %}📡{% else %}📦{% endif %}</div>
+      <div class="type-name">{{ type_key }}</div>
+      <div class="type-count">{{ count }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+{% if user.can_edit %}
+<!-- IMPORT ZONE -->
+<div class="card" style="padding:20px;margin-bottom:20px;border-color:rgba(0,255,136,0.15);">
+  <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--green);letter-spacing:2px;margin-bottom:14px;">BULK IMPORT</div>
+  <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+    <div class="import-zone" id="drop-zone" style="flex:1;min-width:200px;" onclick="document.getElementById('dash-file').click()">
+      <input type="file" id="dash-file" accept=".xlsx,.xls" style="display:none;" onchange="dashImport()">
+      <div class="import-zone-icon">📊</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;">DROP EXCEL FILE OR CLICK TO UPLOAD</div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <a href="/hardware/template/" class="btn btn-ghost" style="border-color:rgba(0,255,136,0.3);color:var(--green);">↓ DOWNLOAD TEMPLATE</a>
+      <a href="/hardware/add/" class="btn btn-primary" style="justify-content:center;">+ ADD MANUALLY</a>
+    </div>
+  </div>
+  <div id="dash-import-result" style="display:none;margin-top:12px;padding:10px;background:var(--bg3);border-radius:5px;font-family:'Share Tech Mono',monospace;font-size:11px;"></div>
+</div>
+{% endif %}
+
+<div class="recent-grid">
+  <div class="card" style="padding:18px;">
+    <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:2px;margin-bottom:14px;">RECENT HARDWARE</div>
+    {% for hw in recent_hw %}
+    <a href="/hardware/{{ hw.pk }}/" style="text-decoration:none;">
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(0,245,255,0.05);transition:background 0.1s;">
+        <div style="font-size:18px;width:32px;text-align:center;">{% if hw.hardware_type == "Laptop" %}💻{% elif hw.hardware_type == "Desktop" %}🖥{% elif hw.hardware_type == "CPU" %}🔧{% elif hw.hardware_type == "Server" %}🗄{% elif hw.hardware_type == "Monitor" %}📺{% elif hw.hardware_type == "Camera" %}📷{% elif hw.hardware_type == "Printer" %}🖨{% elif hw.hardware_type == "Scanner" %}📠{% elif hw.hardware_type == "Mouse" %}🖱{% elif hw.hardware_type == "Keyboard" %}⌨{% else %}📦{% endif %}</div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ hw.brand }} {{ hw.model_name }}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">{{ hw.hw_id }}</div>
+        </div>
+        <span class="badge badge-{{ hw.status }}">{{ hw.status }}</span>
+      </div>
+    </a>
+    {% empty %}
+    <div class="empty-state" style="padding:30px;"><div class="empty-state-icon">▣</div><div class="empty-state-text">NO HARDWARE YET</div></div>
+    {% endfor %}
+  </div>
+  <div class="card" style="padding:18px;border-color:rgba(255,59,59,0.15);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--red);letter-spacing:2px;">TRASH ZONE</div>
+      <a href="/trash/" class="btn btn-ghost" style="font-size:10px;padding:4px 8px;border-color:rgba(255,59,59,0.3);color:var(--red);">VIEW ALL</a>
+    </div>
+    {% for t in recent_trash %}
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid rgba(255,59,59,0.07);">
+      <div style="font-size:18px;width:32px;text-align:center;">⊗</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ t.brand }} {{ t.model_name }}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">{{ t.hw_id }} · {{ t.condition }}</div>
+      </div>
+      <span class="badge badge-trash">{{ t.hardware_type }}</span>
+    </div>
+    {% empty %}
+    <div class="empty-state" style="padding:30px;"><div class="empty-state-icon">⊗</div><div class="empty-state-text">TRASH EMPTY</div></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+{% if user.can_edit %}
+const dz = document.getElementById('drop-zone');
+if(dz){
+  dz.addEventListener('dragover',e=>{e.preventDefault();dz.classList.add('dragover');});
+  dz.addEventListener('dragleave',()=>dz.classList.remove('dragover'));
+  dz.addEventListener('drop',e=>{e.preventDefault();dz.classList.remove('dragover');const f=e.dataTransfer.files[0];if(f){const dt=new DataTransfer();dt.items.add(f);document.getElementById('dash-file').files=dt.files;dashImport();}});
+}
+async function dashImport(){
+  const file=document.getElementById('dash-file').files[0];
+  if(!file)return;
+  const fd=new FormData();fd.append('excel_file',file);
+  const csrf=document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1];
+  fd.append('csrfmiddlewaretoken',csrf);
+  showToast('// IMPORTING DATA...','warn');
+  const res=await fetch('/hardware/import/',{method:'POST',body:fd});
+  const d=await res.json();
+  const box=document.getElementById('dash-import-result');
+  box.style.display='block';
+  if(d.success){box.style.color='var(--green)';box.innerHTML=`✓ IMPORT DONE — Added: ${d.added} | Skipped: ${d.skipped}`+(d.errors.length?`<br><span style="color:var(--amber)">Issues: ${d.errors.slice(0,3).join(' | ')}</span>`:'');showToast(`// IMPORTED ${d.added} RECORDS`);}
+  else{box.style.color='var(--red)';box.innerHTML='✗ FAILED: '+d.error;showToast('IMPORT FAILED','error');}
+}
+{% endif %}
+</script>
+{% endblock %}

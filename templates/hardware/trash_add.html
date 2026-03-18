@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}— Add to Trash{% endblock %}
+{% block nav_trash_add %}active{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="color:var(--red);text-shadow:0 0 15px rgba(255,59,59,0.4);">SEND TO TRASH</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// MARK HARDWARE AS DISPOSED / DEAD / OBSOLETE</div>
+  </div>
+  <span class="page-badge" style="background:var(--red);">DISPOSAL</span>
+</div>
+
+<div style="max-width:700px;">
+  <!-- WARNING BOX -->
+  <div style="background:rgba(255,59,59,0.06);border:1px solid rgba(255,59,59,0.25);border-radius:8px;padding:16px 20px;margin-bottom:24px;display:flex;align-items:center;gap:14px;">
+    <div style="font-size:28px;filter:drop-shadow(0 0 8px var(--red));">☠</div>
+    <div>
+      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--red);letter-spacing:1px;margin-bottom:4px;">HARDWARE GRAVEYARD ENTRY</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:1px;">This hardware will be permanently logged as disposed. This action records the unit in the trash zone for audit purposes.</div>
+    </div>
+  </div>
+
+  <div class="card" style="padding:32px;border-color:rgba(255,59,59,0.2);">
+    <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,var(--red),transparent);opacity:0.5;border-radius:8px 8px 0 0;"></div>
+    <form id="trash-form">
+      {% csrf_token %}
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Hardware ID *</label>
+          <input type="text" name="hw_id" class="form-control" placeholder="e.g. TRASH-2024-001" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hardware Type *</label>
+          <select name="hardware_type" class="form-control" required>
+            <option value="">-- Select Type --</option>
+            {% for t,l in hardware_types %}
+            <option value="{{ t }}">{{ l }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Brand *</label>
+          <input type="text" name="brand" class="form-control" placeholder="Brand name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Model Name *</label>
+          <input type="text" name="model_name" class="form-control" placeholder="Model name" required>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Serial Number *</label>
+          <input type="text" name="serial_number" class="form-control" placeholder="Serial number" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Condition *</label>
+          <select name="condition" class="form-control" required>
+            <option value="">-- Select Condition --</option>
+            <option value="Dead">Dead (Non-functional)</option>
+            <option value="Damaged">Damaged (Physically broken)</option>
+            <option value="Obsolete">Obsolete (Too old)</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason for Disposal *</label>
+        <textarea name="reason" class="form-control" rows="3" placeholder="Describe why this hardware is being disposed..." required></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Original Purchase Price (₹)</label>
+        <input type="number" name="original_price" class="form-control" placeholder="Optional" step="0.01">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Additional Notes</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Any additional information..."></textarea>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button type="submit" class="btn btn-danger" id="submit-btn">
+          <span id="btn-text">⊗ SEND TO TRASH ZONE</span>
+          <span id="btn-loader" class="loader" style="display:none;border-top-color:white;"></span>
+        </button>
+        <a href="/trash/" class="btn btn-ghost">CANCEL</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+document.getElementById('trash-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('submit-btn');
+  document.getElementById('btn-text').style.display = 'none';
+  document.getElementById('btn-loader').style.display = 'inline-block';
+  btn.disabled = true;
+
+  const fd = new FormData(this);
+  const res = await fetch('/trash/add/', { method: 'POST', body: fd });
+  const data = await res.json();
+
+  if (data.success) {
+    showToast('// HARDWARE SENT TO TRASH ZONE', 'success');
+    setTimeout(() => window.location.href = '/trash/', 1200);
+  } else {
+    showToast('ERROR: ' + data.error, 'error');
+    document.getElementById('btn-text').style.display = 'inline';
+    document.getElementById('btn-loader').style.display = 'none';
+    btn.disabled = false;
+  }
+});
+</script>
+{% endblock %}

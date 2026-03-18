@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}— Trash Zone{% endblock %}
+{% block nav_trash %}active{% endblock %}
+
+{% block extra_head %}
+<style>
+.trash-zone-bg {
+  position: relative;
+}
+.trash-zone-bg::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 20px,
+      rgba(255,59,59,0.02) 20px,
+      rgba(255,59,59,0.02) 40px
+    );
+  pointer-events: none;
+  border-radius: 8px;
+}
+.trash-card {
+  background: var(--bg3);
+  border: 1px solid rgba(255,59,59,0.2);
+  border-radius: 8px; padding: 20px;
+  position: relative; overflow: hidden;
+  transition: all 0.2s;
+}
+.trash-card:hover {
+  border-color: var(--red);
+  transform: translateY(-2px);
+}
+.trash-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(to right, transparent, var(--red), transparent);
+  opacity: 0.5;
+}
+.trash-card::after {
+  content: '⊗';
+  position: absolute; top: 14px; right: 14px;
+  font-size: 16px; color: rgba(255,59,59,0.2);
+}
+.trash-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+}
+.reason-pill {
+  display: inline-block;
+  background: rgba(255,59,59,0.08);
+  border: 1px solid rgba(255,59,59,0.2);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-size: 11px; color: var(--red);
+  font-family: 'Share Tech Mono', monospace;
+  letter-spacing: 1px;
+}
+.condition-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 4px;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px; letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.condition-dead { background: rgba(255,59,59,0.12); color: var(--red); border: 1px solid rgba(255,59,59,0.25); }
+.condition-damaged { background: rgba(255,180,0,0.12); color: var(--amber); border: 1px solid rgba(255,180,0,0.25); }
+.condition-obsolete { background: rgba(100,116,139,0.12); color: var(--muted); border: 1px solid rgba(100,116,139,0.25); }
+.condition-other { background: rgba(168,85,247,0.12); color: var(--accent3); border: 1px solid rgba(168,85,247,0.25); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="color:var(--red);text-shadow:0 0 15px rgba(255,59,59,0.4);">TRASH ZONE</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// {{ trash|length }} DISPOSED UNITS IN GRAVEYARD</div>
+  </div>
+  <a href="/trash/add/" class="btn btn-danger">⊗ ADD TO TRASH</a>
+</div>
+
+<!-- TRASH HEADER WARNING BANNER -->
+<div class="trash-header trash-zone-bg" style="margin-bottom:24px;">
+  <div class="trash-icon-big">☠</div>
+  <div>
+    <div class="trash-title">HARDWARE GRAVEYARD</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">
+      DEAD · DAMAGED · OBSOLETE · DISPOSED EQUIPMENT RECORDS
+    </div>
+  </div>
+  <div style="margin-left:auto;text-align:right;">
+    <div style="font-family:'Orbitron',monospace;font-size:36px;font-weight:900;color:var(--red);text-shadow:0 0 20px rgba(255,59,59,0.5);">{{ trash|length }}</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;">TOTAL UNITS</div>
+  </div>
+</div>
+
+{% if trash %}
+<div class="trash-grid">
+  {% for t in trash %}
+  <div class="trash-card">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+      <div style="width:40px;height:40px;border-radius:6px;background:rgba(255,59,59,0.1);border:1px solid rgba(255,59,59,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
+        {% if t.hardware_type == "Laptop" %}💻{% elif t.hardware_type == "Camera" %}📷{% elif t.hardware_type == "Printer" %}🖨️{% elif t.hardware_type == "Monitor" %}🖥️{% elif t.hardware_type == "Mouse" %}🖱️{% elif t.hardware_type == "Keyboard" %}⌨️{% elif t.hardware_type == "Scanner" %}📠{% elif t.hardware_type == "CPU" %}🔧{% elif t.hardware_type == "Server" %}🗄️{% endif %}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:700;font-size:14px;">{{ t.brand }} {{ t.model_name }}</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);">{{ t.hw_id }}</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+      <span class="badge badge-{{ t.hardware_type|lower }}">{{ t.hardware_type }}</span>
+      <span class="condition-badge condition-{{ t.condition|lower }}">{{ t.condition }}</span>
+    </div>
+
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Reason</div>
+    <div style="font-size:13px;margin-bottom:12px;color:var(--text);">{{ t.reason }}</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;">SERIAL</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;">{{ t.serial_number }}</div>
+      </div>
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;">DISPOSED</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;">{{ t.disposed_date }}</div>
+      </div>
+      {% if t.original_price %}
+      <div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;">ORIG. PRICE</div>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);">₹{{ t.original_price }}</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {% if t.notes %}
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,59,59,0.1);font-size:12px;color:var(--muted);">{{ t.notes }}</div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state" style="padding:80px 20px;">
+  <div class="empty-state-icon" style="font-size:60px;">⊗</div>
+  <div class="empty-state-text" style="font-size:14px;">TRASH ZONE IS EMPTY — ALL HARDWARE OPERATIONAL</div>
+  <a href="/trash/add/" class="btn btn-danger" style="margin-top:20px;">⊗ ADD FIRST TRASH ITEM</a>
+</div>
+{% endif %}
+{% endblock %}

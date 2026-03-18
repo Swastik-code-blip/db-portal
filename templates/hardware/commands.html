@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+{% block title %}— Commands{% endblock %}
+{% block nav_cmd %}active{% endblock %}
+{% block extra_head %}
+<style>
+.cmd-section{margin-bottom:32px;}
+.cmd-section-title{font-family:'Orbitron',monospace;font-size:16px;letter-spacing:3px;margin-bottom:16px;padding-bottom:10px;border-bottom:2px solid;}
+.cmd-section-title.ps{color:#5bc4f5;border-color:rgba(91,196,245,0.3);}
+.cmd-section-title.cmd{color:var(--amber);border-color:rgba(255,180,0,0.3);}
+.cmd-section-title.py{color:var(--green);border-color:rgba(0,255,136,0.3);}
+.cmd-card{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden;transition:border 0.2s;}
+.cmd-card.ps{border-left:3px solid #5bc4f5;}
+.cmd-card.ps:hover{border-color:#5bc4f5;}
+.cmd-card.cmd-type{border-left:3px solid var(--amber);}
+.cmd-card.cmd-type:hover{border-color:var(--amber);}
+.cmd-card.py{border-left:3px solid var(--green);}
+.cmd-card.py:hover{border-color:var(--green);}
+.cmd-title{font-family:'Orbitron',monospace;font-size:14px;margin-bottom:5px;letter-spacing:1px;}
+.cmd-title.ps{color:#5bc4f5;}
+.cmd-title.cmd-type{color:var(--amber);}
+.cmd-title.py{color:var(--green);}
+.cmd-desc{font-size:12px;color:var(--muted);margin-bottom:12px;font-family:'Share Tech Mono',monospace;letter-spacing:1px;}
+.cmd-body{background:var(--bg);border:1px solid rgba(0,245,255,0.1);border-radius:5px;padding:14px;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--text);white-space:pre-wrap;word-break:break-all;line-height:1.7;max-height:180px;overflow-y:auto;}
+.cmd-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;}
+.copy-btn{background:rgba(0,245,255,0.07);border:1px solid rgba(0,245,255,0.2);color:var(--accent);border-radius:4px;padding:6px 14px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;transition:all 0.15s;}
+.copy-btn:hover{background:rgba(0,245,255,0.15);}
+.dl-btn{background:rgba(0,255,136,0.07);border:1px solid rgba(0,255,136,0.2);color:var(--green);border-radius:4px;padding:6px 14px;font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:1px;cursor:pointer;text-decoration:none;transition:all 0.15s;display:inline-flex;align-items:center;gap:5px;}
+.dl-btn:hover{background:rgba(0,255,136,0.15);}
+.how-to{background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.1);border-radius:6px;padding:14px 18px;margin-top:10px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:1.8;display:none;}
+.how-to.show{display:block;}
+.how-btn{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:4px;padding:5px 12px;font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;transition:all 0.15s;}
+.how-btn:hover{border-color:var(--accent);color:var(--accent);}
+.auto-badge{background:rgba(255,0,110,0.1);border:1px solid rgba(255,0,110,0.3);color:var(--accent2);border-radius:3px;padding:2px 8px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;margin-left:8px;}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="color:var(--amber);">COMMAND CENTER</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// RUN ON ANY PC → AUTO SAVES TO PORTAL</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS BOX -->
+<div style="background:rgba(255,0,110,0.05);border:1px solid rgba(255,0,110,0.2);border-radius:8px;padding:18px 22px;margin-bottom:28px;">
+  <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent2);letter-spacing:2px;margin-bottom:8px;">HOW AUTO-FETCH WORKS</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:2;letter-spacing:1px;">
+    1. Download the script below (Python / PowerShell / CMD)<br>
+    2. Run it on any computer in your office<br>
+    3. It automatically fetches all hardware info (CPU, RAM, Serial, GPU etc.)<br>
+    4. Sends it directly to this portal — hardware appears instantly in inventory!<br>
+    <span style="color:var(--accent2);">★ No copy-paste needed. Everything saved automatically.</span>
+  </div>
+</div>
+
+<!-- PYTHON SECTION -->
+<div class="cmd-section">
+  <div class="cmd-section-title py">PYTHON SCRIPT <span style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--muted);">— Recommended (works on all platforms)</span></div>
+  {% for cmd in cmds %}{% if cmd.platform == 'python' %}
+  <div class="cmd-card py">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="cmd-title py">{{ cmd.title }}</div>
+      {% if 'auto' in cmd.title|lower or 'fetch' in cmd.title|lower %}<span class="auto-badge">AUTO SAVES TO PORTAL</span>{% endif %}
+    </div>
+    {% if cmd.description %}<div class="cmd-desc">{{ cmd.description }}</div>{% endif %}
+    <div class="cmd-body" id="body-{{ cmd.pk }}">{{ cmd.command }}</div>
+    <div class="cmd-actions">
+      <button class="copy-btn" onclick="copyCmd({{ cmd.pk }})">⎘ COPY</button>
+      <a href="/commands/{{ cmd.pk }}/download/" class="dl-btn">↓ DOWNLOAD .py</a>
+      <button class="how-btn" onclick="toggleHow('how-{{ cmd.pk }}')">? HOW TO RUN</button>
+    </div>
+    <div class="how-to" id="how-{{ cmd.pk }}">
+      STEP 1 — Download the .py file above<br>
+      STEP 2 — Open CMD on the target computer<br>
+      STEP 3 — Run: <span style="color:var(--green);">py {{ cmd.title|lower|cut:" " }}.py</span><br>
+      STEP 4 — It will ask for your portal username and password<br>
+      STEP 5 — Hardware saved to portal automatically!
+    </div>
+  </div>
+  {% endif %}{% endfor %}
+  {% if not cmds %}<div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);padding:20px;">No Python scripts yet.</div>{% endif %}
+</div>
+
+<!-- POWERSHELL SECTION -->
+<div class="cmd-section">
+  <div class="cmd-section-title ps">POWERSHELL SCRIPTS <span style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--muted);">— Windows PowerShell</span></div>
+  {% for cmd in cmds %}{% if cmd.platform == 'powershell' %}
+  <div class="cmd-card ps">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="cmd-title ps">{{ cmd.title }}</div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:auto;">{{ cmd.category }}</span>
+    </div>
+    {% if cmd.description %}<div class="cmd-desc">{{ cmd.description }}</div>{% endif %}
+    <div class="cmd-body" id="body-{{ cmd.pk }}">{{ cmd.command }}</div>
+    <div class="cmd-actions">
+      <button class="copy-btn" onclick="copyCmd({{ cmd.pk }})">⎘ COPY</button>
+      <a href="/commands/{{ cmd.pk }}/download/" class="dl-btn">↓ DOWNLOAD .ps1</a>
+      <button class="how-btn" onclick="toggleHow('how-{{ cmd.pk }}')">? HOW TO RUN</button>
+    </div>
+    <div class="how-to" id="how-{{ cmd.pk }}">
+      STEP 1 — Press <span style="color:#5bc4f5;">Windows key + X</span> → click Windows PowerShell<br>
+      STEP 2 — Copy the command above and paste it<br>
+      STEP 3 — Press Enter to run<br>
+      OR — Download the .ps1 file and run: <span style="color:#5bc4f5;">.\filename.ps1</span>
+    </div>
+  </div>
+  {% endif %}{% endfor %}
+</div>
+
+<!-- CMD SECTION -->
+<div class="cmd-section">
+  <div class="cmd-section-title cmd">COMMAND PROMPT (CMD) <span style="font-size:11px;font-family:'Share Tech Mono',monospace;color:var(--muted);">— Windows CMD</span></div>
+  {% for cmd in cmds %}{% if cmd.platform == 'cmd' %}
+  <div class="cmd-card cmd-type">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div class="cmd-title cmd-type">{{ cmd.title }}</div>
+      <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);margin-left:auto;">{{ cmd.category }}</span>
+    </div>
+    {% if cmd.description %}<div class="cmd-desc">{{ cmd.description }}</div>{% endif %}
+    <div class="cmd-body" id="body-{{ cmd.pk }}">{{ cmd.command }}</div>
+    <div class="cmd-actions">
+      <button class="copy-btn" onclick="copyCmd({{ cmd.pk }})">⎘ COPY</button>
+      <a href="/commands/{{ cmd.pk }}/download/" class="dl-btn">↓ DOWNLOAD .bat</a>
+      <button class="how-btn" onclick="toggleHow('how-{{ cmd.pk }}')">? HOW TO RUN</button>
+    </div>
+    <div class="how-to" id="how-{{ cmd.pk }}">
+      STEP 1 — Press <span style="color:var(--amber);">Windows key + R</span> → type cmd → Enter<br>
+      STEP 2 — Paste the command and press Enter<br>
+      OR — Download the .bat file and double-click to run
+    </div>
+  </div>
+  {% endif %}{% endfor %}
+</div>
+
+{% if user.can_edit %}
+<!-- ADD COMMAND -->
+<div style="border-top:1px solid var(--border);padding-top:24px;margin-top:8px;">
+  <button class="btn btn-amber" onclick="document.getElementById('add-form').style.display=document.getElementById('add-form').style.display=='none'?'block':'none'">+ ADD COMMAND</button>
+  <div id="add-form" style="display:none;margin-top:16px;background:var(--bg3);border:1px solid rgba(255,180,0,0.2);border-radius:8px;padding:22px;">
+    <form id="cmd-form">
+      {% csrf_token %}
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Title *</label><input type="text" name="title" class="form-control" required></div>
+        <div class="form-group"><label class="form-label">Category</label><input type="text" name="category" class="form-control" placeholder="e.g. System, Network"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Platform *</label>
+          <select name="platform" class="form-control">
+            <option value="powershell">PowerShell</option>
+            <option value="cmd">Command Prompt (CMD)</option>
+            <option value="python">Python Script</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Description</label><input type="text" name="description" class="form-control"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Command / Script *</label><textarea name="command" class="form-control" rows="5" style="font-family:'Share Tech Mono',monospace;font-size:12px;" required></textarea></div>
+      <button type="submit" class="btn btn-amber">SAVE</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function copyCmd(id){
+  const text = document.getElementById('body-'+id).textContent;
+  navigator.clipboard.writeText(text).then(()=>showToast('// COPIED TO CLIPBOARD')).catch(()=>showToast('Copy failed','error'));
+}
+function toggleHow(id){
+  const el = document.getElementById(id);
+  el.classList.toggle('show');
+}
+{% if user.can_edit %}
+document.getElementById('cmd-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  const fd=new FormData(this);
+  const res=await fetch('/commands/add/',{method:'POST',body:fd});
+  const d=await res.json();
+  if(d.success){showToast('// COMMAND SAVED');setTimeout(()=>location.reload(),1000);}
+  else showToast('ERROR: '+d.error,'error');
+});
+{% endif %}
+</script>
+{% endblock %}

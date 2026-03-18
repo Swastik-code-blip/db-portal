@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}— {{ hw.hw_id }}{% endblock %}
+{% block nav_hardware %}active{% endblock %}
+{% block extra_head %}
+<style>
+.status-btn { display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border:1px solid var(--border);background:transparent;color:var(--muted);transition:all 0.2s; }
+.status-btn:hover { transform:translateY(-1px); }
+.status-btn.active-btn { border-color:rgba(0,255,136,0.4);color:var(--green);background:rgba(0,255,136,0.08); }
+.status-btn.inactive-btn { border-color:rgba(100,116,139,0.4);color:var(--muted);background:rgba(100,116,139,0.08); }
+.status-btn.maintenance-btn { border-color:rgba(255,180,0,0.4);color:var(--amber);background:rgba(255,180,0,0.08); }
+.status-btn.repair-btn { border-color:rgba(255,0,110,0.4);color:var(--accent2);background:rgba(255,0,110,0.08); }
+.status-btn.selected { box-shadow:0 0 12px currentColor;opacity:1; }
+.status-btn:not(.selected) { opacity:0.45; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:5px;letter-spacing:2px;">// HARDWARE DETAIL</div>
+    <div class="page-title">{{ hw.brand }} {{ hw.model_name }}</div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <span class="badge badge-{{ hw.hardware_type|lower }}">{{ hw.hardware_type }}</span>
+    {% if hw.location %}<span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent3);background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);padding:3px 10px;border-radius:3px;">📍 {{ hw.location }}</span>{% endif %}
+    {% if user.can_edit %}<a href="/hardware/{{ hw.pk }}/edit/" class="btn btn-ghost" style="font-size:11px;">✎ EDIT</a>{% endif %}
+    {% if user.can_edit %}<a href="/trash/add/" class="btn btn-danger" style="font-size:11px;">⊗ TRASH</a>{% endif %}
+  </div>
+</div>
+
+{% if user.can_edit %}
+<!-- QUICK STATUS CHANGE -->
+<div class="card" style="padding:18px;margin-bottom:20px;border-color:rgba(0,245,255,0.2);">
+  <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+    <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:2px;">QUICK STATUS CHANGE</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;" id="status-btns">
+      <button class="status-btn active-btn {% if hw.status == 'active' %}selected{% endif %}" onclick="changeStatus('active')">● Active</button>
+      <button class="status-btn inactive-btn {% if hw.status == 'inactive' %}selected{% endif %}" onclick="changeStatus('inactive')">● Inactive</button>
+      <button class="status-btn maintenance-btn {% if hw.status == 'maintenance' %}selected{% endif %}" onclick="changeStatus('maintenance')">● Maintenance</button>
+      <button class="status-btn repair-btn {% if hw.status == 'repair' %}selected{% endif %}" onclick="changeStatus('repair')">● Under Repair</button>
+    </div>
+    <div id="status-saving" style="display:none;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent);">SAVING...</div>
+  </div>
+</div>
+{% endif %}
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+  <div>
+    <div class="card" style="padding:22px;margin-bottom:16px;">
+      <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:2px;margin-bottom:14px;">HARDWARE INFO</div>
+      <div class="detail-grid">
+        <div class="detail-row"><div class="detail-key">Hardware ID</div><div class="detail-val" style="font-family:'Share Tech Mono',monospace;color:var(--accent);">{{ hw.hw_id }}</div></div>
+        <div class="detail-row"><div class="detail-key">Type</div><div class="detail-val"><span class="badge badge-{{ hw.hardware_type|lower }}">{{ hw.hardware_type }}</span></div></div>
+        <div class="detail-row"><div class="detail-key">Brand</div><div class="detail-val">{{ hw.brand }}</div></div>
+        <div class="detail-row"><div class="detail-key">Model</div><div class="detail-val">{{ hw.model_name }}</div></div>
+        <div class="detail-row"><div class="detail-key">Serial Number</div><div class="detail-val" style="font-family:'Share Tech Mono',monospace;font-size:12px;">{{ hw.serial_number }}</div></div>
+        <div class="detail-row"><div class="detail-key">Location</div><div class="detail-val" style="color:var(--accent3);">{{ hw.location|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Purchase Date</div><div class="detail-val">{{ hw.purchase_date }}</div></div>
+        <div class="detail-row"><div class="detail-key">Warranty Expiry</div><div class="detail-val {% if hw.warranty_expiry %}{% endif %}">{{ hw.warranty_expiry|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Price</div><div class="detail-val" style="color:var(--green);">₹{{ hw.price }}</div></div>
+        <div class="detail-row"><div class="detail-key">Status</div><div class="detail-val" id="current-status-badge"><span class="badge badge-{{ hw.status }}">{{ hw.status }}</span></div></div>
+      </div>
+      {% if hw.specifications %}
+      <div style="margin-top:16px;"><div class="detail-key" style="margin-bottom:6px;">Specifications</div><div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:12px;font-size:13px;line-height:1.7;white-space:pre-wrap;">{{ hw.specifications }}</div></div>
+      {% endif %}
+      {% if hw.notes %}
+      <div style="margin-top:12px;"><div class="detail-key" style="margin-bottom:6px;">Notes</div><div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:12px;font-size:13px;line-height:1.7;">{{ hw.notes }}</div></div>
+      {% endif %}
+    </div>
+
+    {% if props %}
+    <div class="card" style="padding:22px;">
+      <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent3);letter-spacing:2px;margin-bottom:14px;">CUSTOM PROPERTIES</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+        {% for p in props %}
+        <div style="background:var(--bg3);padding:10px 14px;">
+          <div class="detail-key">{{ p.key }}</div>
+          <div style="font-size:14px;font-weight:600;font-family:'Share Tech Mono',monospace;color:var(--accent);">{{ p.value }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="card" style="padding:22px;margin-bottom:16px;">
+      <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:2px;margin-bottom:14px;">ASSIGNED TO</div>
+      {% if hw.assigned_to %}
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <div style="width:50px;height:50px;border-radius:50%;background:rgba(168,85,247,0.15);border:2px solid var(--accent3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:18px;font-weight:900;color:var(--accent3);flex-shrink:0;">{{ hw.assigned_to.name|first|upper }}</div>
+        <div>
+          <div style="font-size:17px;font-weight:700;">{{ hw.assigned_to.name }}</div>
+          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">{{ hw.assigned_to.emp_id }}</div>
+        </div>
+      </div>
+      <div class="detail-grid">
+        <div class="detail-row"><div class="detail-key">Department</div><div class="detail-val">{{ hw.assigned_to.department }}</div></div>
+        <div class="detail-row"><div class="detail-key">Designation</div><div class="detail-val">{{ hw.assigned_to.designation }}</div></div>
+        <div class="detail-row"><div class="detail-key">Email</div><div class="detail-val" style="font-size:12px;color:var(--accent);">{{ hw.assigned_to.email }}</div></div>
+        <div class="detail-row"><div class="detail-key">Phone</div><div class="detail-val">{{ hw.assigned_to.phone }}</div></div>
+      </div>
+      <a href="/employees/{{ hw.assigned_to.pk }}/" class="btn btn-ghost" style="margin-top:14px;width:100%;justify-content:center;">VIEW EMPLOYEE PROFILE</a>
+      {% else %}
+      <div class="empty-state" style="padding:30px;"><div class="empty-state-icon">◈</div><div class="empty-state-text">NOT ASSIGNED</div></div>
+      {% endif %}
+    </div>
+    <div class="card" style="padding:18px;">
+      <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--muted);letter-spacing:2px;margin-bottom:12px;">SYSTEM INFO</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div><div class="detail-key">Created At</div><div style="font-family:'Share Tech Mono',monospace;font-size:11px;">{{ hw.created_at }}</div></div>
+        <div><div class="detail-key">Last Updated</div><div style="font-family:'Share Tech Mono',monospace;font-size:11px;">{{ hw.updated_at }}</div></div>
+        {% if hw.created_by %}<div><div class="detail-key">Created By</div><div style="font-size:13px;color:var(--accent3);">{{ hw.created_by.username }}</div></div>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+<div style="margin-top:18px;"><a href="/hardware/" class="btn btn-ghost">← BACK TO INVENTORY</a></div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+const hwPk = {{ hw.pk }};
+async function changeStatus(newStatus) {
+  document.getElementById('status-saving').style.display = 'inline';
+  const fd = new FormData();
+  fd.append('status', newStatus);
+  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+  const res = await fetch(`/hardware/${hwPk}/status/`, {method:'POST', body:fd});
+  const d = await res.json();
+  document.getElementById('status-saving').style.display = 'none';
+  if (d.success) {
+    // Update all buttons
+    document.querySelectorAll('.status-btn').forEach(btn => btn.classList.remove('selected'));
+    event.target.classList.add('selected');
+    // Update badge
+    const badgeColors = {active:'badge-active', inactive:'badge-inactive', maintenance:'badge-maintenance', repair:'badge-repair'};
+    document.getElementById('current-status-badge').innerHTML = `<span class="badge ${badgeColors[newStatus]}">${newStatus}</span>`;
+    showToast(`// STATUS → ${newStatus.toUpperCase()}`);
+  } else {
+    showToast('ERROR: ' + d.error, 'error');
+  }
+}
+</script>
+{% endblock %}

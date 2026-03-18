@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DB Portal — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#030712;--bg2:#0a0f1e;--accent:#00f5ff;--accent2:#ff006e;--accent3:#a855f7;--green:#00ff88;--red:#ff3b3b;--text:#e2e8f0;--muted:#64748b;--border:rgba(0,245,255,0.2);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,245,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.03) 1px,transparent 1px);background-size:50px 50px;animation:gridMove 20s linear infinite;pointer-events:none;}
+@keyframes gridMove{from{background-position:0 0}to{background-position:50px 50px}}
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.05) 2px,rgba(0,0,0,0.05) 4px);pointer-events:none;}
+.login-wrap{position:relative;z-index:2;width:100%;max-width:420px;padding:20px;}
+.logo-block{text-align:center;margin-bottom:40px;}
+.logo-big{font-family:'Orbitron',monospace;font-size:64px;font-weight:900;color:var(--accent);text-shadow:0 0 40px rgba(0,245,255,0.6);letter-spacing:8px;animation:glitch 4s infinite;}
+@keyframes glitch{0%,100%{text-shadow:0 0 40px var(--accent);}92%{transform:none;}93%{transform:translateX(-3px);text-shadow:3px 0 var(--accent2),-3px 0 var(--accent);}94%{transform:none;}95%{transform:translateX(3px);text-shadow:-3px 0 var(--accent2),3px 0 var(--accent);}96%{transform:none;}}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:6px;margin-top:4px;text-transform:uppercase;}
+.logo-company{font-family:'Rajdhani',sans-serif;font-size:14px;color:var(--accent3);letter-spacing:3px;margin-top:8px;font-weight:600;}
+.card{background:rgba(10,15,30,0.95);border:1px solid var(--border);border-radius:12px;padding:36px;position:relative;overflow:hidden;}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,var(--accent),transparent);}
+.card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(to right,transparent,var(--accent3),transparent);}
+.card-title{font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);letter-spacing:3px;margin-bottom:28px;text-align:center;}
+.form-group{margin-bottom:20px;}
+.form-label{display:block;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;}
+.form-control{width:100%;background:rgba(15,23,42,0.8);border:1px solid rgba(0,245,255,0.2);border-radius:6px;padding:12px 16px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;outline:none;transition:all 0.2s;}
+.form-control:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(0,245,255,0.08);}
+.btn-login{width:100%;padding:13px;background:var(--accent);color:#030712;border:none;border-radius:6px;font-family:'Orbitron',monospace;font-size:13px;font-weight:700;letter-spacing:3px;cursor:pointer;transition:all 0.2s;margin-top:8px;}
+.btn-login:hover{box-shadow:0 0 30px rgba(0,245,255,0.4);transform:translateY(-1px);}
+.error-box{background:rgba(255,59,59,0.08);border:1px solid rgba(255,59,59,0.3);border-radius:6px;padding:12px 16px;margin-bottom:20px;font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--red);letter-spacing:1px;}
+.corner{position:absolute;width:14px;height:14px;border-color:var(--accent);border-style:solid;}
+.corner.tl{top:-1px;left:-1px;border-width:2px 0 0 2px;}
+.corner.br{bottom:-1px;right:-1px;border-width:0 2px 2px 0;}
+.status-line{text-align:center;margin-top:20px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--green);margin-right:6px;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+</style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="logo-block">
+    <div class="logo-big">DB</div>
+    <div class="logo-sub">Hardware Management Portal</div>
+    <div class="logo-company">DAINIK BHASKAR GROUP</div>
+  </div>
+  <div class="card">
+    <div class="corner tl"></div>
+    <div class="corner br"></div>
+    <div class="card-title">// ACCESS TERMINAL</div>
+    {% if error %}
+    <div class="error-box">⊗ {{ error }}</div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Username</label>
+        <input type="text" name="username" class="form-control" placeholder="Enter username" autofocus required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" placeholder="Enter password" required>
+      </div>
+      <button type="submit" class="btn-login">INITIATE ACCESS</button>
+    </form>
+  </div>
+  <div class="status-line"><span class="dot"></span>SYSTEM ONLINE &nbsp;·&nbsp; DB-HWMS v3.0</div>
+</div>
+</body>
+</html>

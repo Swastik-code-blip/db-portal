@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}— Edit {{ hw.hw_id }}{% endblock %}
+{% block nav_hardware %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">EDIT HARDWARE</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// {{ hw.hw_id }} — {{ hw.brand }} {{ hw.model_name }}</div>
+  </div>
+  <span class="page-badge">EDIT MODE</span>
+</div>
+<div class="card" style="max-width:860px;padding:28px;">
+  <form id="hw-edit-form">
+    {% csrf_token %}
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:16px;">// BASIC INFORMATION</div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Hardware ID *</label><input type="text" name="hw_id" class="form-control" value="{{ hw.hw_id }}" required></div>
+      <div class="form-group">
+        <label class="form-label">Hardware Type *</label>
+        <select name="hardware_type" class="form-control" required>
+          {% for t,l in hardware_types %}<option value="{{ t }}" {% if hw.hardware_type == t %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Brand *</label><input type="text" name="brand" class="form-control" value="{{ hw.brand }}" required></div>
+      <div class="form-group"><label class="form-label">Model Name *</label><input type="text" name="model_name" class="form-control" value="{{ hw.model_name }}" required></div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Serial Number *</label><input type="text" name="serial_number" class="form-control" value="{{ hw.serial_number }}" required></div>
+      <div class="form-group"><label class="form-label">Location</label><input type="text" name="location" class="form-control" value="{{ hw.location }}"></div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Purchase Date *</label><input type="date" name="purchase_date" class="form-control" value="{{ hw.purchase_date|date:'Y-m-d' }}" required></div>
+      <div class="form-group"><label class="form-label">Warranty Expiry</label><input type="date" name="warranty_expiry" class="form-control" value="{% if hw.warranty_expiry %}{{ hw.warranty_expiry|date:'Y-m-d' }}{% endif %}"></div>
+    </div>
+    <div class="grid-2">
+      <div class="form-group"><label class="form-label">Price (₹)</label><input type="number" name="price" class="form-control" value="{{ hw.price }}" step="0.01"></div>
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <select name="status" class="form-control">
+          {% for s,l in status_choices %}<option value="{{ s }}" {% if hw.status == s %}selected{% endif %}>{{ l }}</option>{% endfor %}
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Assign to Employee</label>
+      <select name="assigned_to" class="form-control">
+        <option value="">-- Not Assigned --</option>
+        {% for emp in employees %}<option value="{{ emp.pk }}" {% if hw.assigned_to and hw.assigned_to.pk == emp.pk %}selected{% endif %}>{{ emp.emp_id }} — {{ emp.name }} ({{ emp.department }})</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-group"><label class="form-label">Specifications</label><textarea name="specifications" class="form-control" rows="2">{{ hw.specifications }}</textarea></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea name="notes" class="form-control" rows="2">{{ hw.notes }}</textarea></div>
+
+    <div style="margin-top:4px;margin-bottom:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;">// CUSTOM PROPERTIES</div>
+        <button type="button" class="btn btn-ghost" style="padding:5px 10px;font-size:10px;" onclick="addProp()">+ ADD PROPERTY</button>
+      </div>
+      <div id="props-container">
+        {% for p in props %}
+        <div class="prop-row" id="prop-{{ forloop.counter }}">
+          <input type="text" name="prop_key[]" value="{{ p.key }}" placeholder="Property name" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;flex:1;">
+          <input type="text" name="prop_val[]" value="{{ p.value }}" placeholder="Value" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;flex:1;">
+          <button type="button" class="remove-prop" onclick="this.parentElement.remove()">✕</button>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-primary" id="submit-btn">
+        <span id="btn-text">SAVE CHANGES</span>
+        <span id="btn-loader" class="loader" style="display:none;"></span>
+      </button>
+      <a href="/hardware/{{ hw.pk }}/" class="btn btn-ghost">CANCEL</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+let propCount = {{ props|length }};
+function addProp(){
+  propCount++;
+  const div = document.createElement('div');
+  div.className = 'prop-row';
+  div.id = 'prop-'+propCount;
+  div.innerHTML = `
+    <input type="text" name="prop_key[]" placeholder="Property name" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;flex:1;">
+    <input type="text" name="prop_val[]" placeholder="Value" style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;flex:1;">
+    <button type="button" class="remove-prop" onclick="this.parentElement.remove()">✕</button>`;
+  document.getElementById('props-container').appendChild(div);
+}
+document.getElementById('hw-edit-form').addEventListener('submit', async function(e){
+  e.preventDefault();
+  document.getElementById('btn-text').style.display='none';
+  document.getElementById('btn-loader').style.display='inline-block';
+  const fd = new FormData(this);
+  const res = await fetch(window.location.href, {method:'POST', body:fd});
+  const d = await res.json();
+  if(d.success){ showToast('// CHANGES SAVED'); setTimeout(()=>window.location.href='/hardware/{{ hw.pk }}/', 1200); }
+  else { showToast('ERROR: '+d.error,'error'); document.getElementById('btn-text').style.display='inline'; document.getElementById('btn-loader').style.display='none'; }
+});
+</script>
+{% endblock %}
