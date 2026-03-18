@@ -1,2 +1,0 @@
-[deploy]
-startCommand = "python manage.py collectstatic --noinput && gunicorn db_portal.wsgi --bind 0.0.0.0:$PORT"
