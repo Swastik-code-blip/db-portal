@@ -122,14 +122,25 @@ def auto_fetch_api(request):
 
     # Create new hardware
     try:
+        # Handle price
+        try:    price = float(hw_data.get('price', 0) or 0)
+        except: price = 0
+
+        # Handle purchase date
+        pd = hw_data.get('purchase_date', '')
+        try:
+            pd = datetime.strptime(pd, '%Y-%m-%d').date() if pd else date.today()
+        except:
+            pd = date.today()
+
         hw = Hardware.objects.create(
             hw_id=hw_id,
             hardware_type=hw_data.get('hardware_type', 'Desktop'),
             brand=hw_data.get('brand', 'Unknown'),
             model_name=hw_data.get('model_name', 'Unknown'),
             serial_number=serial,
-            purchase_date=date.today(),
-            price=0,
+            purchase_date=pd,
+            price=price,
             status='active',
             location=hw_data.get('location', ''),
             specifications=hw_data.get('specifications', ''),

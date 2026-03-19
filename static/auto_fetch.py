@@ -1,9 +1,9 @@
 """
 DB Portal — Auto Fetch & Save Hardware Info
 Run: py auto_fetch.py
-Automatically fetches everything it can, only asks what it cannot detect.
+Auto detects everything, only asks what it cannot find.
 """
-import subprocess, platform, uuid, json, urllib.request, urllib.error, socket, os
+import subprocess, platform, uuid, json, urllib.request, urllib.error, socket
 from datetime import date
 
 PORTAL_URL = "https://web-production-d8992.up.railway.app"
@@ -11,7 +11,6 @@ PORTAL_URL = "https://web-production-d8992.up.railway.app"
 def run(cmd):
     try:
         out = subprocess.check_output(cmd, shell=True, text=True, stderr=subprocess.DEVNULL).strip()
-        # Clean up wmic output - get value after =
         if '=' in out:
             lines = [l.split('=',1)[-1].strip() for l in out.splitlines() if '=' in l and l.split('=',1)[-1].strip()]
             return lines[0] if lines else ''
@@ -19,37 +18,29 @@ def run(cmd):
     except:
         return ''
 
-def ask(prompt, default=''):
-    """Only ask if default is empty"""
-    if default and default != 'N/A' and default.strip():
-        print(f"  {prompt}: {default} (auto-detected)")
-        return default
-    val = input(f"  {prompt}: ").strip()
-    return val or default
-
 print("="*55)
 print("  DB PORTAL — AUTO HARDWARE FETCHER")
 print("  Fetching system info automatically...")
 print("="*55)
 
-# ── AUTO FETCH EVERYTHING ──────────────────────────────
+# Auto fetch
 computer_name = platform.node()
 os_name       = platform.system() + " " + platform.release()
 os_version    = platform.version()
 architecture  = platform.machine()
-processor     = platform.processor()
+serial        = run('wmic bios get SerialNumber /value')
+cpu_name      = run('wmic cpu get Name /value')
+cpu_cores     = run('wmic cpu get NumberOfCores /value')
+ram_bytes     = run('wmic computersystem get TotalPhysicalMemory /value')
+gpu           = run('wmic path win32_VideoController get name /value')
+disk_size     = run('wmic logicaldisk where "DeviceID=\'C:\'" get Size /value')
+disk_free     = run('wmic logicaldisk where "DeviceID=\'C:\'" get FreeSpace /value')
+board         = run('wmic baseboard get Product /value')
+bios_ver      = run('wmic bios get SMBIOSBIOSVersion /value')
+brand_raw     = run('wmic computersystem get Manufacturer /value')
+model_raw     = run('wmic computersystem get Model /value')
 
-serial     = run('wmic bios get SerialNumber /value')
-cpu_name   = run('wmic cpu get Name /value')
-cpu_cores  = run('wmic cpu get NumberOfCores /value')
-ram_bytes  = run('wmic computersystem get TotalPhysicalMemory /value')
-gpu        = run('wmic path win32_VideoController get name /value')
-disk_size  = run('wmic logicaldisk where "DeviceID=\'C:\'" get Size /value')
-disk_free  = run('wmic logicaldisk where "DeviceID=\'C:\'" get FreeSpace /value')
-board      = run('wmic baseboard get Product /value')
-bios_ver   = run('wmic bios get SMBIOSBIOSVersion /value')
-
-# Convert bytes to readable
+# Convert bytes
 try:    ram_gb = f"{round(int(ram_bytes)/1073741824, 1)} GB"
 except: ram_gb = ram_bytes or 'N/A'
 try:    disk_gb = f"{round(int(disk_size)/1073741824, 0):.0f} GB"
@@ -57,46 +48,38 @@ except: disk_gb = disk_size or 'N/A'
 try:    free_gb = f"{round(int(disk_free)/1073741824, 1)} GB"
 except: free_gb = disk_free or 'N/A'
 
-# MAC address
-try:
-    mac = ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff) for i in range(0,8*6,8)][::-1])
-except:
-    mac = 'N/A'
+# MAC
+try:    mac = ':'.join(['{:02x}'.format((uuid.getnode() >> i) & 0xff) for i in range(0,8*6,8)][::-1])
+except: mac = 'N/A'
 
-# IP address
+# IP
 try:
     ip = socket.gethostbyname(socket.gethostname())
-    if ip.startswith('127.'):
-        ip = run('for /f "tokens=2 delims=:" %a in (\'ipconfig ^| findstr /i "IPv4"\') do @echo %a').split('\n')[0].strip()
-except:
-    ip = 'N/A'
+    if ip.startswith('127.'): ip = 'N/A'
+except: ip = 'N/A'
 
-# Detect hardware type
+# Detect type
 hw_type = 'Desktop'
 try:
-    chassis = run('wmic systemenclosure get ChassisTypes /value')
-    if chassis:
-        nums = [int(x) for x in chassis.replace('[','').replace(']','').split(',') if x.strip().isdigit()]
-        if any(n in [8,9,10,11,12,14,18,21] for n in nums):
-            hw_type = 'Laptop'
-        elif any(n in [17,23] for n in nums):
-            hw_type = 'Server'
-except:
-    pass
+    chassis = run('wmic systemenclosure get ChassisTypes /value').replace('[','').replace(']','')
+    nums = [int(x) for x in chassis.split(',') if x.strip().isdigit()]
+    if any(n in [8,9,10,11,12,14,18,21] for n in nums): hw_type = 'Laptop'
+    elif any(n in [17,23] for n in nums): hw_type = 'Server'
+except: pass
 
-# Detect brand
-brand = run('wmic computersystem get Manufacturer /value')
-if not brand or brand.lower() in ['', 'system manufacturer', 'to be filled by o.e.m.']:
+# Clean brand
+brand = brand_raw
+if not brand or brand.lower() in ['system manufacturer','to be filled by o.e.m.','']:
     brand = run('wmic baseboard get Manufacturer /value')
-if not brand or brand.lower() in ['', 'to be filled by o.e.m.']:
+if not brand or brand.lower() in ['to be filled by o.e.m.','']:
     brand = 'Assembled'
 
-# Detect model
-model = run('wmic computersystem get Model /value')
-if not model or model.lower() in ['', 'system product name', 'to be filled by o.e.m.']:
+# Clean model
+model = model_raw
+if not model or model.lower() in ['system product name','to be filled by o.e.m.','']:
     model = computer_name
 
-# Print what was found
+# Print detected
 print(f"\n  AUTO-DETECTED:")
 print(f"  Computer Name : {computer_name}")
 print(f"  Hardware Type : {hw_type}")
@@ -111,55 +94,57 @@ print(f"  GPU           : {gpu or 'N/A'}")
 print(f"  Serial No     : {serial or 'NOT FOUND'}")
 print(f"  MAC Address   : {mac}")
 print(f"  IP Address    : {ip}")
-print(f"  Motherboard   : {board or 'N/A'}")
 print("="*55)
 
-# ── ONLY ASK WHAT CANNOT BE AUTO-DETECTED ─────────────
-print("\n  PLEASE FILL IN (press Enter to use auto-detected value):\n")
+# Only ask what cannot be detected
+print("\n  PLEASE FILL IN:\n")
 
 username = input("  Portal Username: ").strip()
 password = input("  Portal Password: ").strip()
 
-# Hardware ID — suggest computer name
-hw_id_suggest = computer_name.replace(' ', '-').upper()
-hw_id = input(f"  Hardware ID [{hw_id_suggest}]: ").strip() or hw_id_suggest
+hw_id_suggest = computer_name.replace(' ','-').upper()
+hw_id = input(f"  Hardware ID [{hw_id_suggest}] (press Enter): ").strip() or hw_id_suggest
 
-# Location — cannot be auto-detected
-location = input("  Location (e.g. Head Office, Bhopal): ").strip()
+location = ''
 while not location:
-    location = input("  Location is required — enter location: ").strip()
+    location = input("  Location (e.g. Head Office, Bhopal): ").strip()
+    if not location: print("  Location is required!")
 
-# Serial — if not found, ask
-if not serial or serial == 'N/A':
-    serial = input("  Serial Number (could not auto-detect, please enter): ").strip() or hw_id + "-SN"
+# Price — always ask
+price = input("  Purchase Price in Rs (e.g. 45000) press Enter to skip: ").strip() or '0'
 
-# Confirm type and brand (show detected, allow override)
-print(f"\n  Hardware Type detected as: {hw_type}")
-hw_type_input = input(f"  Press Enter to keep or type (Laptop/Desktop/CPU/Server/Other): ").strip()
-if hw_type_input:
-    hw_type = hw_type_input
+# Purchase date
+purchase_date = input(f"  Purchase Date (YYYY-MM-DD) press Enter for today [{date.today()}]: ").strip() or str(date.today())
 
-print(f"  Brand detected as: {brand}")
-brand_input = input(f"  Press Enter to keep or type correct brand: ").strip()
-if brand_input:
-    brand = brand_input
+# Serial — ask if not found
+if not serial or serial in ['N/A','To Be Filled By O.E.M.']:
+    serial = input("  Serial Number (could not detect, please enter): ").strip() or hw_id+'-SN'
 
-# ── SEND TO PORTAL ─────────────────────────────────────
+# Confirm type
+type_input = input(f"  Hardware Type [{hw_type}] press Enter to keep: ").strip()
+if type_input: hw_type = type_input
+
+# Confirm brand
+brand_input = input(f"  Brand [{brand}] press Enter to keep: ").strip()
+if brand_input: brand = brand_input
+
 print("\n  Sending to portal...")
 
 payload = {
     "username": username,
     "password": password,
     "hardware": {
-        "hw_id": hw_id,
+        "hw_id"        : hw_id,
         "hardware_type": hw_type,
-        "brand": brand,
-        "model_name": model,
+        "brand"        : brand,
+        "model_name"   : model,
         "serial_number": serial,
-        "location": location,
+        "location"     : location,
+        "price"        : price,
+        "purchase_date": purchase_date,
         "specifications": f"{cpu_name}, {ram_gb} RAM, {disk_gb} Storage",
-        "notes": f"Auto-fetched on {date.today()} from {computer_name}",
-        "properties": {
+        "notes"        : f"Auto-fetched on {date.today()} from {computer_name}",
+        "properties"   : {
             "Computer Name"   : computer_name,
             "Operating System": os_name,
             "OS Version"      : os_version,
@@ -188,18 +173,16 @@ try:
     )
     with urllib.request.urlopen(req, timeout=15) as resp:
         result = json.loads(resp.read().decode())
-
     if result.get('success'):
-        print(f"\n  ✓ SUCCESS! {result.get('message')}")
+        print(f"\n  SUCCESS! {result.get('message')}")
         print(f"  Hardware ID : {result.get('hw_id')}")
         print(f"  Action      : {result.get('action','saved').upper()}")
         print(f"\n  View at: {PORTAL_URL}/hardware/")
     else:
-        print(f"\n  ✗ ERROR: {result.get('error')}")
-
+        print(f"\n  ERROR: {result.get('error')}")
 except urllib.error.URLError as e:
-    print(f"\n  ✗ CANNOT CONNECT: {e}")
-    print(f"  Make sure portal is running at {PORTAL_URL}")
+    print(f"\n  CANNOT CONNECT: {e}")
+    print(f"  Check portal URL: {PORTAL_URL}")
 
 print("\n" + "="*55)
 input("  Press Enter to exit...")

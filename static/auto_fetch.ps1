@@ -72,7 +72,7 @@ Write-Host "  MAC Address   : $mac"
 Write-Host "  IP Address    : $ip"
 Write-Host "====================================================" -ForegroundColor Cyan
 
-# Only ask what cannot be detected
+# Ask user for required info
 Write-Host "`n  PLEASE FILL IN:" -ForegroundColor Yellow
 
 $username = Read-Host "  Portal Username"
@@ -89,8 +89,16 @@ while (-not $location) {
     if (-not $location) { Write-Host "  Location is required!" -ForegroundColor Red }
 }
 
+# Price — always ask
+$price_input = Read-Host "  Purchase Price in Rs (e.g. 45000) press Enter to skip"
+$price = if ($price_input) { $price_input } else { "0" }
+
+# Purchase date
+$date_input = Read-Host "  Purchase Date (YYYY-MM-DD) press Enter for today"
+$purchase_date = if ($date_input) { $date_input } else { (Get-Date -Format "yyyy-MM-dd") }
+
 # If serial not found, ask
-if (-not $serial -or $serial -eq "N/A") {
+if (-not $serial -or $serial -eq "N/A" -or $serial -eq "To Be Filled By O.E.M.") {
     $serial = Read-Host "  Serial Number (could not auto-detect, please enter)"
     if (-not $serial) { $serial = "$hw_id-SN" }
 }
@@ -108,15 +116,17 @@ $body = @{
     username = $username
     password = $password
     hardware = @{
-        hw_id         = $hw_id
-        hardware_type = $hw_type
-        brand         = $brand
-        model_name    = $model
-        serial_number = $serial
-        location      = $location
+        hw_id          = $hw_id
+        hardware_type  = $hw_type
+        brand          = $brand
+        model_name     = $model
+        serial_number  = $serial
+        location       = $location
+        price          = $price
+        purchase_date  = $purchase_date
         specifications = "$cpu, $ram_gb GB RAM, $disk_gb GB Storage"
-        notes         = "Auto-fetched via PowerShell on $(Get-Date -Format 'yyyy-MM-dd') from $computer"
-        properties    = @{
+        notes          = "Auto-fetched via PowerShell on $(Get-Date -Format 'yyyy-MM-dd') from $computer"
+        properties     = @{
             "Computer Name"    = $computer
             "Operating System" = $os
             "OS Version"       = $os_ver
@@ -148,7 +158,7 @@ try {
     }
 } catch {
     Write-Host "`n  CANNOT CONNECT: $_" -ForegroundColor Red
-    Write-Host "  Make sure portal URL is correct: $PORTAL_URL" -ForegroundColor Yellow
+    Write-Host "  Make sure portal is running at $PORTAL_URL" -ForegroundColor Yellow
 }
 
 Write-Host "`n====================================================" -ForegroundColor Cyan
