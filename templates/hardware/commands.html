@@ -43,13 +43,28 @@
 
 <!-- HOW IT WORKS BOX -->
 <div style="background:rgba(255,0,110,0.05);border:1px solid rgba(255,0,110,0.2);border-radius:8px;padding:18px 22px;margin-bottom:28px;">
-  <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent2);letter-spacing:2px;margin-bottom:8px;">HOW AUTO-FETCH WORKS</div>
-  <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:2;letter-spacing:1px;">
-    1. Download the script below (Python / PowerShell / CMD)<br>
-    2. Run it on any computer in your office<br>
-    3. It automatically fetches all hardware info (CPU, RAM, Serial, GPU etc.)<br>
-    4. Sends it directly to this portal — hardware appears instantly in inventory!<br>
-    <span style="color:var(--accent2);">★ No copy-paste needed. Everything saved automatically.</span>
+  <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent2);letter-spacing:2px;margin-bottom:12px;">HOW TO RUN ON ANY PC — ONE LINE ONLY</div>
+
+  <div style="margin-bottom:14px;">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;">// POWERSHELL — paste this one line and press Enter:</div>
+    <div style="background:var(--bg);border:1px solid rgba(91,196,245,0.3);border-radius:5px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <code style="font-family:'Share Tech Mono',monospace;font-size:12px;color:#5bc4f5;" id="ps-oneliner">iex (irm 'https://web-production-d8992.up.railway.app/static/auto_fetch.ps1')</code>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('ps-oneliner').textContent).then(()=>showToast('// COPIED!'))" style="background:rgba(91,196,245,0.1);border:1px solid rgba(91,196,245,0.3);color:#5bc4f5;border-radius:4px;padding:5px 12px;font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;white-space:nowrap;">⎘ COPY</button>
+    </div>
+  </div>
+
+  <div style="margin-bottom:14px;">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;">// CMD — paste this one line and press Enter:</div>
+    <div style="background:var(--bg);border:1px solid rgba(255,180,0,0.3);border-radius:5px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <code style="font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--amber);word-break:break-all;" id="cmd-oneliner">py -c "import urllib.request; urllib.request.urlretrieve('https://web-production-d8992.up.railway.app/static/auto_fetch.py','%TEMP%\dbf.py'); import subprocess; subprocess.run(['py','%TEMP%\dbf.py'])"</code>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('cmd-oneliner').textContent).then(()=>showToast('// COPIED!'))" style="background:rgba(255,180,0,0.1);border:1px solid rgba(255,180,0,0.3);color:var(--amber);border-radius:4px;padding:5px 12px;font-family:'Share Tech Mono',monospace;font-size:10px;cursor:pointer;white-space:nowrap;">⎘ COPY</button>
+    </div>
+  </div>
+
+  <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:2;letter-spacing:1px;margin-top:8px;">
+    ★ No file download needed — just paste one line in PowerShell or CMD on any PC!<br>
+    ★ Auto detects: CPU, RAM, GPU, Serial No, IP, MAC, Brand, Model<br>
+    ★ Only asks: Username, Password, Location, Price
   </div>
 </div>
 

@@ -4,29 +4,35 @@ color 0B
 echo.
 echo ====================================================
 echo   DB PORTAL - AUTO HARDWARE FETCHER (CMD)
-echo   Fetching system info automatically...
+echo   This will fetch your PC info and save to portal
 echo ====================================================
 echo.
 
-:: Check if Python is installed
+:: Check Python
 py --version >nul 2>&1
 if errorlevel 1 (
     echo ERROR: Python not installed!
-    echo Please install Python from python.org
+    echo Download from: python.org
     pause
     exit
 )
 
-:: Check if auto_fetch.py exists in same folder
-if exist "%~dp0auto_fetch.py" (
-    echo Running Python auto-fetch script...
-    py "%~dp0auto_fetch.py"
-) else (
-    echo auto_fetch.py not found in same folder!
+echo Step 1: Downloading latest fetch script from portal...
+py -c "import urllib.request; urllib.request.urlretrieve('https://web-production-d8992.up.railway.app/static/auto_fetch.py', '%TEMP%\db_auto_fetch.py'); print('  Downloaded successfully!')"
+
+if not exist "%TEMP%\db_auto_fetch.py" (
     echo.
-    echo Please download auto_fetch.py from portal:
-    echo https://web-production-d8992.up.railway.app/commands/
-    echo.
-    echo Then put both files in the same folder and run again.
+    echo ERROR: Could not download script!
+    echo Please check your internet connection.
     pause
+    exit
 )
+
+echo Step 2: Running hardware detection...
+echo.
+py "%TEMP%\db_auto_fetch.py"
+
+:: Cleanup temp file
+del "%TEMP%\db_auto_fetch.py" >nul 2>&1
+
+pause
