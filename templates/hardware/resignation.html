@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DB Portal — Resignation / Report</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#030712;--bg2:#0a0f1e;--bg3:#0f172a;--accent:#00f5ff;--accent2:#ff006e;--accent3:#a855f7;--green:#00ff88;--amber:#ffb400;--red:#ff3b3b;--text:#e2e8f0;--muted:#64748b;--border:rgba(0,245,255,0.15);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,245,255,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,245,255,0.03) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;}
+.wrap{width:100%;max-width:520px;position:relative;z-index:2;}
+.logo{text-align:center;margin-bottom:28px;}
+.logo-big{font-family:'Orbitron',monospace;font-size:48px;font-weight:900;color:var(--accent);text-shadow:0 0 30px rgba(0,245,255,0.5);letter-spacing:6px;}
+.logo-sub{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:4px;margin-top:4px;}
+.tabs{display:flex;gap:0;margin-bottom:0;border-radius:8px 8px 0 0;overflow:hidden;}
+.tab-btn{flex:1;padding:12px;background:var(--bg3);border:1px solid var(--border);border-bottom:none;font-family:'Orbitron',monospace;font-size:11px;letter-spacing:2px;cursor:pointer;transition:all 0.2s;color:var(--muted);}
+.tab-btn.active{background:var(--bg2);color:var(--accent);border-color:var(--accent);}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:0 0 10px 10px;padding:28px;}
+.resign-card{border-color:rgba(255,0,110,0.3);}
+.report-card{border-color:rgba(255,180,0,0.3);}
+.tab-content{display:none;}
+.tab-content.show{display:block;}
+.form-group{margin-bottom:16px;}
+.form-label{display:block;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:6px;text-transform:uppercase;}
+.form-control{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:10px 13px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;transition:all 0.2s;}
+.form-control:focus{border-color:var(--accent);}
+textarea.form-control{resize:vertical;min-height:100px;}
+.btn{display:block;width:100%;padding:12px;border:none;border-radius:6px;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;cursor:pointer;transition:all 0.2s;margin-top:8px;}
+.btn-resign{background:var(--accent2);color:#fff;}
+.btn-report{background:var(--amber);color:#030712;}
+.btn:hover{transform:translateY(-1px);}
+.msg{padding:14px;border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;margin-top:14px;display:none;}
+.msg.success{background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);color:var(--green);}
+.msg.error{background:rgba(255,59,59,0.08);border:1px solid rgba(255,59,59,0.3);color:var(--red);}
+.back-link{text-align:center;margin-top:16px;font-family:'Share Tech Mono',monospace;font-size:10px;}
+.back-link a{color:var(--muted);text-decoration:none;letter-spacing:2px;}
+.back-link a:hover{color:var(--accent);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">
+    <div class="logo-big">DB</div>
+    <div class="logo-sub">Employee Self Service Portal</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('resign')">✉ RESIGNATION</button>
+    <button class="tab-btn" onclick="switchTab('report')">⚠ REPORT HARDWARE</button>
+    <button class="tab-btn" onclick="switchTab('hwrequest')">🔧 HW REQUEST</button>
+  </div>
+
+  <!-- RESIGNATION TAB -->
+  <div class="card resign-card tab-content show" id="tab-resign">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:18px;">// SUBMIT RESIGNATION LETTER — GOES TO YOUR AREA ADMIN FOR APPROVAL</div>
+    <form id="resign-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Employee ID *</label>
+        <input type="text" name="emp_id" class="form-control" placeholder="e.g. EMP-001" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Full Name *</label>
+        <input type="text" name="employee_name" class="form-control" placeholder="Your full name" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Last Working Date</label>
+        <input type="date" name="last_working_date" class="form-control">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Reason for Resignation *</label>
+        <input type="text" name="reason" class="form-control" placeholder="Brief reason" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Resignation Letter *</label>
+        <textarea name="resignation_letter" class="form-control" rows="5" placeholder="Dear Sir/Ma'am,&#10;&#10;I am writing to formally resign from my position...&#10;&#10;Regards,&#10;Your Name" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-resign">SUBMIT RESIGNATION</button>
+      <div class="msg" id="resign-msg"></div>
+    </form>
+  </div>
+
+  <!-- REPORT HARDWARE TAB -->
+  <div class="card report-card tab-content" id="tab-report" style="border-color:rgba(255,180,0,0.3);">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:18px;">// REPORT HARDWARE ISSUE — IT TEAM WILL BE NOTIFIED</div>
+    <form id="report-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Employee ID *</label>
+        <input type="text" name="emp_id" class="form-control" placeholder="e.g. EMP-001" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Hardware ID *</label>
+        <input type="text" name="hw_id" class="form-control" placeholder="e.g. HW-001" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Issue Description *</label>
+        <textarea name="issue" class="form-control" rows="4" placeholder="Describe the hardware issue in detail..." required></textarea>
+      </div>
+      <button type="submit" class="btn btn-report">SUBMIT REPORT</button>
+      <div class="msg" id="report-msg"></div>
+    </form>
+  </div>
+
+  <!-- HW REQUEST TAB -->
+  <div class="card tab-content" id="tab-hwrequest" style="border-radius:0 0 10px 10px;border-color:rgba(0,245,255,0.3);">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:18px;">// REQUEST HARDWARE REPAIR / REPLACEMENT / NEW DEVICE</div>
+    <form id="hwreq-form">
+      {% csrf_token %}
+      <div class="form-group"><label class="form-label">Employee ID *</label><input type="text" name="emp_id" class="form-control" placeholder="e.g. EMP-001" required></div>
+      <div class="form-group"><label class="form-label">Your Name *</label><input type="text" name="employee_name" class="form-control" placeholder="Your full name" required></div>
+      <div class="form-group"><label class="form-label">Hardware ID (if existing)</label><input type="text" name="hw_id" class="form-control" placeholder="e.g. HW-001 (leave blank if requesting new)"></div>
+      <div class="form-group">
+        <label class="form-label">Request Type *</label>
+        <select name="request_type" class="form-control">
+          <option value="repair">Repair — Fix existing hardware</option>
+          <option value="replace">Replace — Replace broken hardware</option>
+          <option value="new">New — Request new hardware</option>
+        </select>
+      </div>
+      <div class="form-group"><label class="form-label">Issue Description *</label><textarea name="issue_description" class="form-control" rows="4" placeholder="Describe the issue or what you need..." required></textarea></div>
+      <button type="submit" class="btn" style="background:var(--accent);color:var(--bg);width:100%;">SUBMIT REQUEST</button>
+      <div class="msg" id="hwreq-msg"></div>
+    </form>
+  </div>
+
+  <div class="back-link"><a href="/login/">← BACK TO LOGIN</a></div>
+</div>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('show'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('show');
+  event.target.classList.add('active');
+}
+
+document.getElementById('resign-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(this);
+  const res = await fetch('/resign/', {method:'POST', body:fd});
+  const d = await res.json();
+  const msg = document.getElementById('resign-msg');
+  msg.style.display='block';
+  msg.className = 'msg ' + (d.success ? 'success' : 'error');
+  msg.textContent = d.success ? '✓ ' + d.message : '✗ ' + d.error;
+  if(d.success) this.reset();
+});
+
+document.getElementById('report-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(this);
+  const res = await fetch('/report-hardware/', {method:'POST', body:fd});
+  const d = await res.json();
+  const msg = document.getElementById('report-msg');
+  msg.style.display='block';
+  msg.className = 'msg ' + (d.success ? 'success' : 'error');
+  msg.textContent = d.success ? '✓ ' + d.message : '✗ ' + d.error;
+  if(d.success) this.reset();
+});
+
+document.getElementById('hwreq-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(this);
+  const res = await fetch('/hw-approval/', {method:'POST', body:fd});
+  const d = await res.json();
+  const msg = document.getElementById('hwreq-msg');
+  msg.style.display='block';
+  msg.className = 'msg ' + (d.success ? 'success' : 'error');
+  msg.textContent = d.success ? '✓ ' + d.message : '✗ ' + d.error;
+  if(d.success) this.reset();
+});
+</script>
+</body>
+</html>

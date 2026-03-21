@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}— Report Hardware{% endblock %}
+{% block content %}
+<div style="max-width:500px;margin:0 auto;">
+  <div class="page-header"><div class="page-title">REPORT HARDWARE</div></div>
+  <div class="card" style="padding:24px;">
+    <form id="report-form">{% csrf_token %}
+      <div class="form-group"><label class="form-label">Employee ID *</label><input type="text" name="emp_id" class="form-control" required></div>
+      <div class="form-group"><label class="form-label">Hardware ID *</label><input type="text" name="hw_id" class="form-control" required></div>
+      <div class="form-group"><label class="form-label">Issue *</label><textarea name="issue" class="form-control" rows="4" required></textarea></div>
+      <button type="submit" class="btn btn-amber">SUBMIT REPORT</button>
+    </form>
+    <div id="msg" style="display:none;margin-top:14px;padding:12px;border-radius:5px;font-family:'Share Tech Mono',monospace;font-size:11px;"></div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.getElementById('report-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const fd=new FormData(this);
+  const res=await fetch('/report-hardware/',{method:'POST',body:fd});
+  const d=await res.json();
+  const m=document.getElementById('msg');m.style.display='block';
+  m.style.color=d.success?'var(--green)':'var(--red)';
+  m.textContent=d.success?'✓ '+d.message:'✗ '+d.error;
+  if(d.success)this.reset();
+});
+</script>
+{% endblock %}

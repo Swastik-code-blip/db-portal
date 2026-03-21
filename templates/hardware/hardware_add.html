@@ -3,30 +3,21 @@
 {% block nav_add_hw %}active{% endblock %}
 {% block extra_head %}
 <style>
-.type-selector{display:grid;grid-template-columns:repeat(auto-fill,minmax(95px,1fr));gap:8px;margin-bottom:20px;}
+.type-selector{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;margin-bottom:20px;}
 .type-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:12px 6px;background:var(--bg3);border:2px solid var(--border);border-radius:8px;cursor:pointer;transition:all 0.2s;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;user-select:none;}
 .type-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(0,245,255,0.05);}
 .type-btn.selected{border-color:var(--accent);color:var(--accent);background:rgba(0,245,255,0.1);box-shadow:0 0 14px rgba(0,245,255,0.15);}
-.type-btn .t-icon{font-size:24px;}
+.type-btn .t-icon{font-size:22px;}
 .form-fields-wrap{display:none;animation:fadeIn 0.3s ease;}
 @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
-.field-section{margin-bottom:4px;}
 .section-head{font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;text-transform:uppercase;padding:10px 0 8px;border-top:1px solid var(--border);margin-top:4px;}
-.prop-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
-.prop-row input{flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;transition:border 0.2s;}
-.prop-row input:focus{border-color:var(--accent);}
-.remove-prop{background:rgba(255,59,59,0.1);border:1px solid rgba(255,59,59,0.2);color:var(--red);border-radius:4px;padding:7px 10px;cursor:pointer;font-size:12px;transition:all 0.15s;white-space:nowrap;}
-.remove-prop:hover{background:rgba(255,59,59,0.2);}
-.smart-props{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
-.smart-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:4px;cursor:pointer;background:rgba(0,245,255,0.07);border:1px solid rgba(0,245,255,0.18);font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:1px;transition:all 0.15s;}
-.smart-chip:hover{background:rgba(0,245,255,0.16);border-color:var(--accent);}
-.smart-chip.added{background:rgba(0,255,136,0.08);border-color:rgba(0,255,136,0.3);color:var(--green);}
-.field-na{opacity:0.25;pointer-events:none;position:relative;}
-.field-na::after{content:'N/A FOR THIS TYPE';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--red);letter-spacing:2px;white-space:nowrap;background:var(--bg3);padding:2px 8px;border-radius:3px;border:1px solid rgba(255,59,59,0.2);}
-.tag-req{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:1px 5px;border-radius:2px;margin-left:5px;background:rgba(0,245,255,0.1);color:var(--accent);border:1px solid rgba(0,245,255,0.2);}
-.tag-opt{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:1px 5px;border-radius:2px;margin-left:5px;background:rgba(100,116,139,0.12);color:var(--muted);border:1px solid rgba(100,116,139,0.2);}
-.tag-na{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;padding:1px 5px;border-radius:2px;margin-left:5px;background:rgba(255,59,59,0.08);color:var(--red);border:1px solid rgba(255,59,59,0.18);}
-.selected-type-label{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.25);border-radius:6px;font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:2px;margin-bottom:20px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.field-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+.tag-req{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;margin-left:4px;background:rgba(0,245,255,0.1);color:var(--accent);border:1px solid rgba(0,245,255,0.2);}
+.tag-opt{display:inline-block;font-family:'Share Tech Mono',monospace;font-size:8px;padding:1px 5px;border-radius:2px;margin-left:4px;background:rgba(100,116,139,0.1);color:var(--muted);border:1px solid rgba(100,116,139,0.2);}
+.bulk-zone{border:2px dashed rgba(0,255,136,0.25);border-radius:8px;padding:18px;text-align:center;cursor:pointer;transition:all 0.2s;}
+.bulk-zone:hover{border-color:var(--green);background:rgba(0,255,136,0.03);}
+@media(max-width:600px){.field-row,.field-row-3{grid-template-columns:1fr;}}
 </style>
 {% endblock %}
 
@@ -34,9 +25,9 @@
 <div class="page-header">
   <div>
     <div class="page-title">ADD HARDWARE</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// SELECT TYPE → FIELDS AUTO-ADJUST FOR THAT HARDWARE</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// SELECT TYPE → SMART FIELDS APPEAR</div>
   </div>
-  <div style="display:flex;gap:8px;">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;">
     <input type="file" id="excel-file" accept=".xlsx,.xls" style="display:none;" onchange="importExcel()">
     <button class="btn btn-ghost" style="border-color:rgba(0,255,136,0.3);color:var(--green);font-size:11px;" onclick="document.getElementById('excel-file').click()">↑ BULK IMPORT</button>
     <a href="/hardware/template/" class="btn btn-ghost" style="border-color:rgba(0,255,136,0.3);color:var(--green);font-size:11px;">↓ TEMPLATE</a>
@@ -45,7 +36,7 @@
 
 <div id="import-result" style="display:none;margin-bottom:14px;padding:12px 16px;background:var(--bg3);border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:11px;border:1px solid var(--border);"></div>
 
-<div class="card" style="padding:28px;">
+<div class="card" style="padding:24px;">
   <form id="hw-form">
     {% csrf_token %}
     <input type="hidden" name="hardware_type" id="hw_type_val">
@@ -55,75 +46,47 @@
     <div class="type-selector">
       <div class="type-btn" onclick="selectType(this,'Laptop')"><span class="t-icon">💻</span>Laptop</div>
       <div class="type-btn" onclick="selectType(this,'Desktop')"><span class="t-icon">🖥</span>Desktop</div>
-      <div class="type-btn" onclick="selectType(this,'CPU')"><span class="t-icon">🔧</span>CPU Unit</div>
       <div class="type-btn" onclick="selectType(this,'Server')"><span class="t-icon">🗄</span>Server</div>
-      <div class="type-btn" onclick="selectType(this,'Monitor')"><span class="t-icon">📺</span>Monitor</div>
-      <div class="type-btn" onclick="selectType(this,'Camera')"><span class="t-icon">📷</span>Camera</div>
+      <div class="type-btn" onclick="selectType(this,'TV')"><span class="t-icon">📺</span>TV / LCD</div>
       <div class="type-btn" onclick="selectType(this,'Printer')"><span class="t-icon">🖨</span>Printer</div>
       <div class="type-btn" onclick="selectType(this,'Scanner')"><span class="t-icon">📠</span>Scanner</div>
+      <div class="type-btn" onclick="selectType(this,'CCTV')"><span class="t-icon">📹</span>CCTV</div>
+      <div class="type-btn" onclick="selectType(this,'ILL/BB')"><span class="t-icon">🌐</span>ILL / BB</div>
       <div class="type-btn" onclick="selectType(this,'Mouse')"><span class="t-icon">🖱</span>Mouse</div>
       <div class="type-btn" onclick="selectType(this,'Keyboard')"><span class="t-icon">⌨</span>Keyboard</div>
-      <div class="type-btn" onclick="selectType(this,'UPS')"><span class="t-icon">🔋</span>UPS</div>
       <div class="type-btn" onclick="selectType(this,'Switch')"><span class="t-icon">🔀</span>Switch</div>
-      <div class="type-btn" onclick="selectType(this,'Router')"><span class="t-icon">📡</span>Router</div>
       <div class="type-btn" onclick="selectType(this,'Other')"><span class="t-icon">📦</span>Other</div>
     </div>
 
-    <!-- DYNAMIC FORM -->
+    <!-- DYNAMIC FORM FIELDS -->
     <div class="form-fields-wrap" id="form-fields-wrap">
 
-      <!-- SELECTED TYPE LABEL -->
-      <div class="selected-type-label" id="type-label">
-        <span id="type-label-icon"></span>
-        <span id="type-label-text"></span>
+      <!-- SELECTED TYPE BADGE -->
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.25);border-radius:6px;font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:2px;margin-bottom:20px;">
+        <span id="type-label-icon"></span><span id="type-label-text"></span>
       </div>
 
-      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:2px;margin-bottom:16px;">② FILL IN DETAILS</div>
+      <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);letter-spacing:2px;margin-bottom:16px;">② FILL DETAILS</div>
 
-      <!-- BASIC — always shown -->
+      <!-- COMMON FIELDS — always shown -->
       <div class="section-head">// BASIC INFO</div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Hardware ID <span class="tag-req">REQUIRED</span></label>
-          <input type="text" name="hw_id" class="form-control" id="f_hw_id" placeholder="Auto or e.g. HW-2024-001" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Brand <span class="tag-req">REQUIRED</span></label>
-          <input type="text" name="brand" class="form-control" id="f_brand" placeholder="e.g. Dell" required>
-        </div>
+      <div class="field-row">
+        <div class="form-group"><label class="form-label">Hardware ID <span class="tag-req">REQUIRED</span></label><input type="text" name="hw_id" class="form-control" id="f_hw_id" required></div>
+        <div class="form-group"><label class="form-label">Serial Number <span class="tag-req">REQUIRED</span></label><input type="text" name="serial_number" class="form-control" id="f_serial" required></div>
       </div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Model Name <span class="tag-req">REQUIRED</span></label>
-          <input type="text" name="model_name" class="form-control" id="f_model" placeholder="e.g. Inspiron 15" required>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Serial Number <span class="tag-req">REQUIRED</span></label>
-          <input type="text" name="serial_number" class="form-control" id="f_serial" placeholder="Unique serial number" required>
-        </div>
+      <div class="field-row">
+        <div class="form-group"><label class="form-label">Brand / Make <span class="tag-req">REQUIRED</span></label><input type="text" name="brand" class="form-control" id="f_brand" required></div>
+        <div class="form-group"><label class="form-label">Model <span class="tag-req">REQUIRED</span></label><input type="text" name="model_name" class="form-control" id="f_model" required></div>
       </div>
-      <div class="grid-2">
+      <div class="field-row">
         <div class="form-group">
-          <label class="form-label">Location <span class="tag-opt">OPTIONAL</span></label>
+          <label class="form-label">Location <span class="tag-req">REQUIRED</span></label>
           {% if user.has_location_filter %}
           <input type="text" name="location" class="form-control" value="{{ user.location }}" readonly style="opacity:0.6;">
           {% else %}
-          <input type="text" name="location" class="form-control" placeholder="e.g. Head Office" list="loc-list">
+          <input type="text" name="location" class="form-control" placeholder="e.g. Bhopal Office" list="loc-list">
           <datalist id="loc-list">{% for loc in all_locations %}<option value="{{ loc }}">{% endfor %}</datalist>
           {% endif %}
-        </div>
-        <div class="form-group">
-          <label class="form-label">Assign to Employee <span class="tag-opt">OPTIONAL</span></label>
-          <select name="assigned_to" class="form-control">
-            <option value="">-- Not Assigned --</option>
-            {% for emp in employees %}<option value="{{ emp.pk }}">{{ emp.emp_id }} — {{ emp.name }}</option>{% endfor %}
-          </select>
-        </div>
-      </div>
-      <div class="grid-2">
-        <div class="form-group">
-          <label class="form-label">Purchase Date <span class="tag-req">REQUIRED</span></label>
-          <input type="date" name="purchase_date" class="form-control" required>
         </div>
         <div class="form-group">
           <label class="form-label">Status</label>
@@ -132,46 +95,32 @@
           </select>
         </div>
       </div>
-
-      <!-- PURCHASE INFO -->
-      <div class="section-head">// PURCHASE INFO</div>
-      <div class="grid-2">
-        <div class="form-group" id="fg_price">
-          <label class="form-label">Price (₹) <span class="tag-opt" id="price_tag">OPTIONAL</span></label>
-          <input type="number" name="price" class="form-control" placeholder="0" step="0.01">
-        </div>
-        <div class="form-group" id="fg_warranty">
-          <label class="form-label">Warranty Expiry <span id="warranty_tag" class="tag-opt">OPTIONAL</span></label>
-          <input type="date" name="warranty_expiry" class="form-control" id="f_warranty">
-        </div>
+      <div class="field-row">
+        <div class="form-group"><label class="form-label">Purchase Date <span class="tag-req">REQUIRED</span></label><input type="date" name="purchase_date" class="form-control" required></div>
+        <div class="form-group"><label class="form-label">Price (₹) <span class="tag-opt">OPTIONAL</span></label><input type="number" name="price" class="form-control" placeholder="0" step="0.01"></div>
       </div>
-
-      <!-- SPECS — only for complex hardware -->
-      <div id="fg_specs_section">
-        <div class="section-head">// SPECIFICATIONS</div>
+      <div class="field-row">
+        <div class="form-group"><label class="form-label">Warranty Expiry <span id="warranty_tag" class="tag-opt">OPTIONAL</span></label><input type="date" name="warranty_expiry" class="form-control" id="f_warranty"></div>
         <div class="form-group">
-          <label class="form-label">Specifications <span class="tag-opt">OPTIONAL</span></label>
-          <textarea name="specifications" class="form-control" rows="2" id="f_specs" placeholder="Brief summary..."></textarea>
+          <label class="form-label">Assign to Employee <span class="tag-opt">OPTIONAL</span></label>
+          <select name="assigned_to" class="form-control">
+            <option value="">-- Not Assigned --</option>
+            {% for emp in employees %}<option value="{{ emp.pk }}">{{ emp.emp_id }} — {{ emp.name }}</option>{% endfor %}
+          </select>
         </div>
       </div>
+
+      <!-- TYPE-SPECIFIC FIELDS — shown dynamically -->
+      <div id="type-specific-fields"></div>
 
       <!-- NOTES -->
       <div class="form-group" style="margin-top:4px;">
         <label class="form-label">Notes <span class="tag-opt">OPTIONAL</span></label>
-        <textarea name="notes" class="form-control" rows="2" placeholder="Any additional notes..."></textarea>
-      </div>
-
-      <!-- SMART PROPERTIES -->
-      <div id="fg_props_section">
-        <div class="section-head">// TECHNICAL PROPERTIES</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:1px;margin-bottom:8px;">CLICK TO ADD PROPERTY:</div>
-        <div class="smart-props" id="smart-chips"></div>
-        <div id="props-container"></div>
-        <button type="button" class="btn btn-ghost" style="padding:5px 12px;font-size:10px;margin-top:4px;" onclick="addProp('','')">+ CUSTOM PROPERTY</button>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Additional notes..."></textarea>
       </div>
 
       <!-- SUBMIT -->
-      <div style="display:flex;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+      <div style="display:flex;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);flex-wrap:wrap;">
         <button type="submit" class="btn btn-primary" id="submit-btn">
           <span id="btn-text">+ ADD TO INVENTORY</span>
           <span id="btn-loader" class="loader" style="display:none;"></span>
@@ -185,179 +134,315 @@
 
 {% block extra_scripts %}
 <script>
-const TYPES = {
-  Laptop:{icon:'💻',brand:'Dell, HP, Lenovo, Asus',model:'e.g. Inspiron 15 3520',warranty:true,specs:true,specsHint:'e.g. Intel i5 12th Gen, 8GB RAM, 512GB SSD, Win 11',props:['RAM','Processor (CPU)','Storage','Operating System','Display Size','Battery','Graphics Card','WiFi','Bluetooth','USB Ports','Weight (kg)']},
-  Desktop:{icon:'🖥',brand:'HP, Dell, Assembled',model:'e.g. EliteDesk 800 G9',warranty:true,specs:true,specsHint:'e.g. Intel i5, 8GB RAM, 256GB SSD + 1TB HDD',props:['RAM','Processor (CPU)','Storage','Operating System','Motherboard','Graphics Card','Power Supply','Cabinet','Form Factor']},
-  CPU:{icon:'🔧',brand:'Assembled, Dell, HP',model:'e.g. Workstation WS-01',warranty:true,specs:true,specsHint:'e.g. Ryzen 5, 16GB RAM, custom build',props:['Processor (CPU)','RAM','Storage','Motherboard','Operating System','Power Supply','Cabinet','IP Address','GPU']},
-  Server:{icon:'🗄',brand:'Dell, HP, IBM, Lenovo',model:'e.g. PowerEdge R740',warranty:true,specs:true,specsHint:'e.g. Dual Xeon, 64GB ECC RAM, 4TB RAID-5',props:['CPU','RAM','Storage (RAID)','Operating System','IP Address','Rack Unit','Network Ports','iDRAC/iLO IP','Power Supplies','Uptime SLA']},
-  Monitor:{icon:'📺',brand:'LG, Samsung, Dell, BenQ',model:'e.g. 27UK850-W',warranty:true,specs:true,specsHint:'e.g. 27 inch 4K IPS 60Hz',props:['Screen Size','Resolution','Panel Type','Refresh Rate','Ports','Response Time (ms)','Brightness (nits)','HDR Support']},
-  Camera:{icon:'📷',brand:'Canon, Nikon, Sony',model:'e.g. EOS 200D Mark II',warranty:true,specs:true,specsHint:'e.g. 24.1MP DSLR with 18-55mm kit lens',props:['Megapixels','Sensor Type','Lens Kit','Video Resolution','Battery Model','Memory Card','Image Stabilization','Connectivity']},
-  Printer:{icon:'🖨',brand:'HP, Epson, Canon, Brother',model:'e.g. LaserJet Pro M404',warranty:true,specs:true,specsHint:'e.g. A4 Mono Laser, 38ppm, USB + Network',props:['Print Type','Speed (ppm)','Connectivity','Paper Size','Color or Mono','Toner/Ink Model','Duty Cycle','Network Ready']},
-  Scanner:{icon:'📠',brand:'Epson, Canon, Fujitsu',model:'e.g. Perfection V39',warranty:true,specs:true,specsHint:'e.g. Flatbed A4, 4800 DPI, USB',props:['Scanner Type','Resolution (DPI)','Scan Size','Connectivity','ADF Capacity','Color Depth']},
-  Mouse:{icon:'🖱',brand:'Logitech, HP, Dell',model:'e.g. MX Master 3',warranty:false,specs:false,specsHint:'',props:['DPI','Connectivity','Number of Buttons','Color','Wired/Wireless']},
-  Keyboard:{icon:'⌨',brand:'Logitech, HP, Zebronics',model:'e.g. MK710',warranty:false,specs:false,specsHint:'',props:['Switch Type','Connectivity','Layout','Backlight','Language','Wired/Wireless']},
-  UPS:{icon:'🔋',brand:'APC, Microtek, Luminous',model:'e.g. Back-UPS 1500VA',warranty:true,specs:true,specsHint:'e.g. 1500VA 865W, 25min runtime, 8 outlets',props:['Capacity (VA)','Wattage (W)','Runtime at 50%','Number of Outlets','Battery Type','Display Type']},
-  Switch:{icon:'🔀',brand:'Cisco, TP-Link, D-Link',model:'e.g. SG300-28P',warranty:true,specs:true,specsHint:'e.g. 24-port Gigabit managed switch',props:['Number of Ports','Port Speed','Managed/Unmanaged','IP Address','VLAN Support','PoE Support','Rack Mountable']},
-  Router:{icon:'📡',brand:'Cisco, TP-Link, MikroTik',model:'e.g. RV340',warranty:true,specs:true,specsHint:'e.g. Dual WAN Gigabit VPN Router',props:['IP Address','WAN Ports','LAN Ports','WiFi Band','Max Throughput','VPN Support','Firmware Version']},
-  Other:{icon:'📦',brand:'Any brand',model:'Model name',warranty:true,specs:true,specsHint:'Describe the hardware...',props:['Capacity','Connectivity','Power Input','Color','Weight']},
+// ── TYPE-SPECIFIC FIELD DEFINITIONS ──────────────────────────────────────────
+const TYPE_FIELDS = {
+
+  Laptop: {
+    icon:'💻', brand:'Dell, HP, Lenovo, Asus', model:'e.g. Inspiron 15 3520', warranty:true,
+    sections:[
+      {title:'// EMPLOYEE & ASSET INFO', fields:[
+        {name:'sap_asset_code',label:'SAP Asset Code',type:'text'},
+        {name:'emp_grade',label:'Employee Grade',type:'text'},
+        {name:'department',label:'Department',type:'text'},
+        {name:'user_location',label:'User Location',type:'text'},
+        {name:'region',label:'Region',type:'text'},
+        {name:'business_unit',label:'Business Unit',type:'text'},
+        {name:'asset_location',label:'Asset Location',type:'text'},
+      ]},
+      {title:'// HARDWARE SPECS', fields:[
+        {name:'processor_type',label:'Processor Type',type:'text',placeholder:'e.g. Intel Core i5'},
+        {name:'processor_series',label:'Processor Series',type:'text',placeholder:'e.g. 12th Gen'},
+        {name:'generation',label:'Generation',type:'text',placeholder:'e.g. 12th'},
+        {name:'ram',label:'RAM',type:'text',placeholder:'e.g. 8GB DDR4'},
+        {name:'hdd_size',label:'HDD/SSD Size',type:'text',placeholder:'e.g. 512GB'},
+        {name:'hard_disk_type',label:'Hard Disk Type',type:'text',placeholder:'SSD / HDD'},
+        {name:'display_size',label:'Display Size (inch)',type:'text',placeholder:'e.g. 15.6'},
+        {name:'os',label:'Operating System',type:'text',placeholder:'e.g. Windows 11'},
+      ]},
+      {title:'// ADDITIONAL', fields:[
+        {name:'current_hostname',label:'Current Hostname',type:'text'},
+        {name:'current_status_detail',label:'Current Status Detail',type:'text'},
+        {name:'old_emp_id',label:'Old Employee ID',type:'text'},
+        {name:'old_emp_name',label:'Old Employee Name',type:'text'},
+        {name:'ztna',label:'ZTNA',type:'text'},
+        {name:'alias_id',label:'Alias ID',type:'text'},
+        {name:'po_no',label:'PO Number',type:'text'},
+        {name:'po_date',label:'PO Date',type:'date'},
+        {name:'price_without_gst',label:'Price Without GST (₹)',type:'number'},
+        {name:'it_spoc_verification',label:'IT SPOC Verification',type:'text'},
+        {name:'remarks',label:'Remarks',type:'textarea'},
+      ]},
+    ]
+  },
+
+  Desktop: {
+    icon:'🖥', brand:'HP, Dell, Assembled', model:'e.g. EliteDesk 800', warranty:true,
+    sections:[
+      {title:'// DESKTOP / TC INFO', fields:[
+        {name:'dt_tc_type',label:'DT / TC Type',type:'select',options:['Desktop','Thin Client','All-in-One']},
+        {name:'department',label:'Department',type:'text'},
+        {name:'designation',label:'Designation',type:'text'},
+        {name:'grade',label:'Grade',type:'text'},
+        {name:'region',label:'Region (State/Corp)',type:'text'},
+        {name:'division',label:'Division',type:'text'},
+        {name:'sap_code',label:'SAP Code (DT)',type:'text'},
+      ]},
+      {title:'// HARDWARE SPECS', fields:[
+        {name:'os',label:'Operating System',type:'text',placeholder:'e.g. Windows 11'},
+        {name:'processor',label:'Processor',type:'text',placeholder:'e.g. Intel Core i3-12100'},
+        {name:'generation',label:'Generation',type:'text',placeholder:'e.g. 12th Gen'},
+        {name:'ram',label:'RAM',type:'text',placeholder:'e.g. 8GB DDR4'},
+        {name:'hdd_ssd',label:'HDD/SSD Type',type:'select',options:['HDD','SSD','Both']},
+        {name:'hdd_size',label:'HDD/SSD Size',type:'text',placeholder:'e.g. 512GB'},
+      ]},
+      {title:'// LCD / MONITOR', fields:[
+        {name:'lcd_size',label:'LCD Size (inch)',type:'text',placeholder:'e.g. 21.5'},
+        {name:'lcd_model',label:'LCD Model',type:'text'},
+        {name:'lcd_serial',label:'LCD Serial No',type:'text'},
+        {name:'lcd_sap_code',label:'LCD SAP Code',type:'text'},
+        {name:'lcd_make',label:'LCD Make/Brand',type:'text'},
+        {name:'lcd_age',label:'LCD Age (years)',type:'number'},
+      ]},
+      {title:'// ADDITIONAL', fields:[
+        {name:'current_status_detail',label:'Current Status Detail',type:'text'},
+        {name:'user_working_details',label:'User Working Details',type:'text'},
+        {name:'po_no',label:'PO Number',type:'text'},
+        {name:'po_date',label:'PO Date',type:'date'},
+        {name:'other_comments',label:'Other Comments',type:'textarea'},
+      ]},
+    ]
+  },
+
+  Printer: {
+    icon:'🖨', brand:'HP, Epson, Canon, Brother', model:'e.g. LaserJet Pro M404', warranty:true,
+    sections:[
+      {title:'// PRINTER INFO', fields:[
+        {name:'state',label:'State',type:'text'},
+        {name:'press_bureau_office',label:'Press / Bureau / Office',type:'text'},
+        {name:'printer_requirement',label:'Printer Type A4/A3/DMP',type:'select',options:['A4','A3','DMP','A4+A3']},
+        {name:'suggested_model',label:'Suggested Model',type:'text'},
+        {name:'qty',label:'Quantity',type:'number'},
+        {name:'network_printer_free',label:'If Network — How Many A4 Will Be Free',type:'number'},
+        {name:'age',label:'Age (Years)',type:'number'},
+        {name:'reason',label:'Reason / Justification',type:'textarea'},
+        {name:'can_reuse',label:'Can Be Reused?',type:'select',options:['Yes','No','Maybe']},
+      ]},
+    ]
+  },
+
+  CCTV: {
+    icon:'📹', brand:'Hikvision, Dahua, CP Plus', model:'e.g. DS-2CD2143G2-I', warranty:true,
+    sections:[
+      {title:'// CCTV SYSTEM INFO', fields:[
+        {name:'state',label:'State',type:'text'},
+        {name:'center_name',label:'Center / Bureau / Plant Name',type:'text'},
+        {name:'office_press_bureau',label:'Office / Press / Bureau',type:'text'},
+        {name:'surveillance_device_type',label:'Surveillance Device Type',type:'text'},
+        {name:'total_ports_dvr_nvr',label:'Total Ports in DVR/NVR',type:'number'},
+        {name:'free_ports',label:'Free Ports in DVR/NVR',type:'number'},
+        {name:'using_ports',label:'Using Ports',type:'number'},
+        {name:'camera_vga_non_ip',label:'Camera VGA Non-IP Count',type:'number'},
+        {name:'camera_ip_2mp',label:'Camera IP 2MP Count',type:'number'},
+        {name:'camera_ip_above_2mp',label:'Camera IP >2MP Count',type:'number'},
+        {name:'camera_type',label:'Camera Type (IP/Non-IP)',type:'select',options:['IP','Non-IP','Mixed']},
+        {name:'nvr_dvr_age',label:'NVR/DVR Age (Years)',type:'number'},
+        {name:'nvr_dvr_company',label:'NVR/DVR Company Name',type:'text'},
+        {name:'nvr_dvr_model',label:'NVR/DVR Model Number',type:'text'},
+        {name:'hdd_size',label:'HDD Size in NVR/DVR',type:'text'},
+        {name:'backup_days',label:'Current Backup Days',type:'number'},
+        {name:'lcd_display',label:'LCD Display',type:'text'},
+        {name:'all_cameras_working',label:'All Cameras Working?',type:'select',options:['Yes','No','Partial']},
+        {name:'non_operational_since',label:'If Not Operational — Since When',type:'text'},
+        {name:'action_taken',label:'Action Taken So Far',type:'textarea'},
+        {name:'dashboard_screenshot_link',label:'Dashboard Screenshot Link',type:'text'},
+      ]},
+    ]
+  },
+
+  'ILL/BB': {
+    icon:'🌐', brand:'Airtel, BSNL, Jio, ACT', model:'e.g. 100Mbps Leased Line', warranty:false,
+    sections:[
+      {title:'// LINK INFO', fields:[
+        {name:'state',label:'State',type:'text'},
+        {name:'it_engineer_location',label:'IT Engineer Location',type:'text'},
+        {name:'link_location',label:'Link Location',type:'text'},
+        {name:'office_type',label:'Office Type',type:'text'},
+        {name:'isp_name',label:'ISP Name',type:'text'},
+        {name:'link_type',label:'Link Type',type:'select',options:['ILL','Broadband','MPLS','P2P','4G/LTE','Other']},
+        {name:'link_status',label:'Link Status',type:'select',options:['Active','Inactive','Under Installation','Cancelled']},
+        {name:'circuit_id',label:'Circuit ID',type:'text'},
+        {name:'medium',label:'Fiber / RF / Copper',type:'select',options:['Fiber','RF','Copper','Other']},
+        {name:'speed_mbps',label:'Speed (Mbps)',type:'number'},
+        {name:'yearly_cost',label:'Yearly Cost (₹)',type:'number'},
+        {name:'link_ip_address',label:'Link IP Address',type:'text'},
+        {name:'link_postal_address',label:'Link Postal Address',type:'textarea'},
+      ]},
+      {title:'// BILLING & RENEWAL', fields:[
+        {name:'po_no',label:'PO Number',type:'text'},
+        {name:'po_date',label:'PO Date',type:'date'},
+        {name:'po_bill_period_months',label:'PO Bill Period (Months)',type:'number'},
+        {name:'next_renewal_date',label:'Next Renewal Date',type:'date'},
+        {name:'billing_cycle',label:'Billing Cycle',type:'select',options:['Annual','Quarterly','Monthly']},
+        {name:'payment_location',label:'Payment Location',type:'select',options:['Local','State','Corporate']},
+        {name:'payment_done_upto',label:'Payment Done Up To (Date)',type:'date'},
+        {name:'payment_status',label:'Payment Status',type:'text'},
+        {name:'amount_paid',label:'Amount Paid (₹)',type:'number'},
+        {name:'remark',label:'Remark',type:'textarea'},
+      ]},
+    ]
+  },
+
+  Server: {
+    icon:'🗄', brand:'Dell, HP, IBM', model:'e.g. PowerEdge R740', warranty:true,
+    sections:[
+      {title:'// SERVER SPECS', fields:[
+        {name:'cpu',label:'CPU',type:'text',placeholder:'e.g. Dual Xeon Silver 4210'},
+        {name:'ram',label:'RAM',type:'text',placeholder:'e.g. 64GB ECC DDR4'},
+        {name:'storage_raid',label:'Storage (RAID)',type:'text',placeholder:'e.g. 4TB RAID-5'},
+        {name:'os',label:'Operating System',type:'text'},
+        {name:'ip_address',label:'IP Address',type:'text'},
+        {name:'rack_unit',label:'Rack Unit (U)',type:'text'},
+        {name:'network_ports',label:'Network Ports',type:'text'},
+        {name:'idrac_ilo_ip',label:'iDRAC/iLO IP',type:'text'},
+        {name:'power_supplies',label:'Power Supplies',type:'text'},
+      ]},
+    ]
+  },
+
+  TV: {
+    icon:'📺', brand:'Samsung, LG, Sony', model:'e.g. 55" 4K Smart TV', warranty:true,
+    sections:[
+      {title:'// TV / LCD INFO', fields:[
+        {name:'screen_size',label:'Screen Size (inch)',type:'text',placeholder:'e.g. 55'},
+        {name:'resolution',label:'Resolution',type:'select',options:['Full HD 1080p','4K UHD','HD 720p','8K','Other']},
+        {name:'panel_type',label:'Panel Type',type:'select',options:['LED','OLED','QLED','LCD','Other']},
+        {name:'smart_tv',label:'Smart TV?',type:'select',options:['Yes','No']},
+        {name:'ports',label:'Ports (HDMI/USB)',type:'text'},
+        {name:'sap_code',label:'SAP Code',type:'text'},
+        {name:'installation_location',label:'Installation Location Detail',type:'text'},
+      ]},
+    ]
+  },
+
+  Switch: {
+    icon:'🔀', brand:'Cisco, TP-Link, D-Link', model:'e.g. SG300-28P', warranty:true,
+    sections:[
+      {title:'// SWITCH INFO', fields:[
+        {name:'ports',label:'Number of Ports',type:'number'},
+        {name:'port_speed',label:'Port Speed',type:'select',options:['10/100 Mbps','Gigabit','10G','Mixed']},
+        {name:'managed',label:'Managed/Unmanaged',type:'select',options:['Managed','Unmanaged']},
+        {name:'ip_address',label:'IP Address',type:'text'},
+        {name:'vlan_support',label:'VLAN Support',type:'select',options:['Yes','No']},
+        {name:'poe_support',label:'PoE Support',type:'select',options:['Yes','No']},
+        {name:'rack_mountable',label:'Rack Mountable',type:'select',options:['Yes','No']},
+      ]},
+    ]
+  },
+
+  Scanner: {
+    icon:'📠', brand:'Epson, Canon, Fujitsu', model:'e.g. Perfection V39', warranty:true,
+    sections:[
+      {title:'// SCANNER INFO', fields:[
+        {name:'scanner_type',label:'Scanner Type',type:'select',options:['Flatbed','ADF','Handheld','Drum']},
+        {name:'resolution_dpi',label:'Resolution (DPI)',type:'text'},
+        {name:'scan_size',label:'Scan Size',type:'select',options:['A4','A3','A4+A3','Letter']},
+        {name:'connectivity',label:'Connectivity',type:'text',placeholder:'USB, Network'},
+        {name:'adf_capacity',label:'ADF Capacity',type:'number'},
+      ]},
+    ]
+  },
+
+  Mouse:{icon:'🖱',brand:'Logitech, HP',model:'e.g. MX Master 3',warranty:false,sections:[{title:'// MOUSE INFO',fields:[{name:'dpi',label:'DPI',type:'text'},{name:'connectivity',label:'Connectivity',type:'select',options:['USB Wired','Wireless 2.4GHz','Bluetooth','Both']},{name:'buttons',label:'Number of Buttons',type:'number'}]}]},
+  Keyboard:{icon:'⌨',brand:'Logitech, HP',model:'e.g. MK710',warranty:false,sections:[{title:'// KEYBOARD INFO',fields:[{name:'switch_type',label:'Switch Type',type:'text'},{name:'connectivity',label:'Connectivity',type:'select',options:['USB Wired','Wireless','Bluetooth']},{name:'layout',label:'Layout',type:'text',placeholder:'e.g. QWERTY'},{name:'backlight',label:'Backlight',type:'select',options:['Yes','No']}]}]},
+  Other:{icon:'📦',brand:'Any',model:'Model name',warranty:true,sections:[{title:'// DETAILS',fields:[{name:'capacity',label:'Capacity',type:'text'},{name:'connectivity',label:'Connectivity',type:'text'},{name:'power_input',label:'Power Input',type:'text'}]}]},
 };
 
-const addedChips = new Set();
-let propCount = 0;
+let selectedType='';
 
-function selectType(btn, type) {
-  // Deselect all buttons
-  document.querySelectorAll('.type-btn').forEach(b => b.classList.remove('selected'));
+function selectType(btn,type){
+  document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
   btn.classList.add('selected');
-
-  const cfg = TYPES[type];
-  document.getElementById('hw_type_val').value = type;
-
-  // Update type label
-  document.getElementById('type-label-icon').textContent = cfg.icon;
-  document.getElementById('type-label-text').textContent = type.toUpperCase() + ' SELECTED';
-
-  // Update placeholders
-  document.getElementById('f_brand').placeholder = cfg.brand;
-  document.getElementById('f_model').placeholder = cfg.model;
-
-  // WARRANTY field
-  const fgWarranty = document.getElementById('fg_warranty');
-  const warrantyInput = document.getElementById('f_warranty');
-  const warrantyTag = document.getElementById('warranty_tag');
-  if (cfg.warranty) {
-    fgWarranty.style.opacity = '1';
-    fgWarranty.style.pointerEvents = 'auto';
-    warrantyInput.disabled = false;
-    warrantyTag.textContent = 'OPTIONAL';
-    warrantyTag.className = 'tag-opt';
-  } else {
-    fgWarranty.style.opacity = '0.25';
-    fgWarranty.style.pointerEvents = 'none';
-    warrantyInput.disabled = true;
-    warrantyInput.value = '';
-    warrantyTag.textContent = 'N/A';
-    warrantyTag.className = 'tag-na';
-  }
-
-  // SPECS section
-  const specsSection = document.getElementById('fg_specs_section');
-  const specsTA = document.getElementById('f_specs');
-  if (cfg.specs) {
-    specsSection.style.display = 'block';
-    specsTA.disabled = false;
-    specsTA.placeholder = cfg.specsHint;
-  } else {
-    specsSection.style.display = 'none';
-    specsTA.disabled = true;
-    specsTA.value = '';
-  }
-
-  // SMART PROPERTY CHIPS
-  addedChips.clear();
-  document.getElementById('props-container').innerHTML = '';
-  propCount = 0;
-  const chipsWrap = document.getElementById('smart-chips');
-  chipsWrap.innerHTML = '';
-  cfg.props.forEach(p => {
-    const chip = document.createElement('span');
-    chip.className = 'smart-chip';
-    chip.id = 'chip-' + p.replace(/[^a-z0-9]/gi, '_');
-    chip.innerHTML = `+ ${p}`;
-    chip.onclick = () => {
-      if (addedChips.has(p)) return;
-      addedChips.add(p);
-      chip.classList.add('added');
-      chip.innerHTML = `✓ ${p}`;
-      addProp(p, '');
-    };
-    chipsWrap.appendChild(chip);
+  selectedType=type;
+  document.getElementById('hw_type_val').value=type;
+  const cfg=TYPE_FIELDS[type];
+  document.getElementById('type-label-icon').textContent=cfg.icon;
+  document.getElementById('type-label-text').textContent=type.toUpperCase()+' SELECTED';
+  document.getElementById('f_brand').placeholder=cfg.brand;
+  document.getElementById('f_model').placeholder=cfg.model;
+  document.getElementById('f_hw_id').placeholder='e.g. '+type.toUpperCase().replace('/','').slice(0,3)+'-001';
+  const warrantyRow=document.getElementById('f_warranty').closest('.form-group');
+  if(cfg.warranty){warrantyRow.style.opacity='1';warrantyRow.style.pointerEvents='auto';document.getElementById('f_warranty').disabled=false;}
+  else{warrantyRow.style.opacity='0.25';warrantyRow.style.pointerEvents='none';document.getElementById('f_warranty').disabled=true;document.getElementById('f_warranty').value='';}
+  // Build type-specific fields
+  const container=document.getElementById('type-specific-fields');
+  container.innerHTML='';
+  cfg.sections.forEach(sec=>{
+    const h=document.createElement('div');
+    h.className='section-head';h.textContent=sec.title;
+    container.appendChild(h);
+    const grid=document.createElement('div');
+    // Group fields in rows of 2
+    const fields=sec.fields;
+    for(let i=0;i<fields.length;i+=2){
+      const row=document.createElement('div');
+      row.className='field-row';
+      [fields[i],fields[i+1]].forEach(f=>{
+        if(!f)return;
+        const g=document.createElement('div');g.className='form-group';
+        let input='';
+        if(f.type==='select'){
+          input=`<select name="${f.name}" class="form-control"><option value="">-- Select --</option>${(f.options||[]).map(o=>`<option>${o}</option>`).join('')}</select>`;
+        }else if(f.type==='textarea'){
+          input=`<textarea name="${f.name}" class="form-control" rows="2" placeholder="${f.placeholder||''}"></textarea>`;
+        }else{
+          input=`<input type="${f.type||'text'}" name="${f.name}" class="form-control" placeholder="${f.placeholder||''}">`;
+        }
+        g.innerHTML=`<label class="form-label">${f.label} <span class="tag-opt">OPTIONAL</span></label>${input}`;
+        row.appendChild(g);
+      });
+      container.appendChild(row);
+    }
   });
-
-  // Show the form
-  const wrap = document.getElementById('form-fields-wrap');
-  wrap.style.display = 'block';
-
-  // Smooth scroll to form
-  setTimeout(() => {
-    wrap.scrollIntoView({behavior:'smooth', block:'start'});
-  }, 100);
+  const wrap=document.getElementById('form-fields-wrap');
+  wrap.style.display='block';
+  setTimeout(()=>wrap.scrollIntoView({behavior:'smooth',block:'start'}),100);
 }
 
-function addProp(key, val) {
-  propCount++;
-  const id = 'prop-' + propCount;
-  const div = document.createElement('div');
-  div.className = 'prop-row';
-  div.id = id;
-  div.innerHTML = `
-    <input type="text" name="prop_key[]" value="${key}" placeholder="Property name (e.g. RAM)"
-      style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;flex:1;transition:border 0.2s;"
-      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-    <input type="text" name="prop_val[]" value="${val}" placeholder="Value (e.g. 16GB DDR4)"
-      style="background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none;flex:1;transition:border 0.2s;"
-      onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'">
-    <button type="button" class="remove-prop" onclick="removeProp('${id}','${key}')">✕</button>`;
-  document.getElementById('props-container').appendChild(div);
-  if (key) {
-    setTimeout(() => div.querySelector('[name="prop_val[]"]').focus(), 50);
-  }
-}
-
-function removeProp(id, key) {
-  document.getElementById(id).remove();
-  if (key) {
-    addedChips.delete(key);
-    const chipId = 'chip-' + key.replace(/[^a-z0-9]/gi, '_');
-    const chip = document.getElementById(chipId);
-    if (chip) {
-      chip.classList.remove('added');
-      chip.innerHTML = `+ ${key}`;
+document.getElementById('hw-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  if(!selectedType){showToast('Please select a hardware type first!','error');return;}
+  document.getElementById('btn-text').style.display='none';
+  document.getElementById('btn-loader').style.display='inline-block';
+  document.getElementById('submit-btn').disabled=true;
+  const fd=new FormData(this);
+  // Collect all extra fields as properties
+  const knownFields=['hw_id','hardware_type','brand','model_name','serial_number','purchase_date','warranty_expiry','price','status','location','assigned_to','notes','csrfmiddlewaretoken'];
+  const extraFields=[];
+  for(let [k,v] of fd.entries()){
+    if(!knownFields.includes(k)&&v&&v.trim()){
+      extraFields.push({key:k.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase()),value:v.trim()});
     }
   }
-}
-
-document.getElementById('hw-form').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const type = document.getElementById('hw_type_val').value;
-  if (!type) { showToast('Please select a hardware type first!', 'error'); return; }
-  document.getElementById('btn-text').style.display = 'none';
-  document.getElementById('btn-loader').style.display = 'inline-block';
-  document.getElementById('submit-btn').disabled = true;
-  const fd = new FormData(this);
-  const res = await fetch('/hardware/add/', {method:'POST', body:fd});
-  const d = await res.json();
-  if (d.success) {
-    showToast('// ' + type.toUpperCase() + ' ADDED: ' + d.hw_id);
-    setTimeout(() => window.location.href = '/hardware/', 1300);
-  } else {
-    showToast('ERROR: ' + d.error, 'error');
-    document.getElementById('btn-text').style.display = 'inline';
-    document.getElementById('btn-loader').style.display = 'none';
-    document.getElementById('submit-btn').disabled = false;
-  }
+  // Add as prop_key[]/prop_val[]
+  extraFields.forEach(p=>{fd.append('prop_key[]',p.key);fd.append('prop_val[]',p.value);});
+  const res=await fetch('/hardware/add/',{method:'POST',body:fd});
+  const d=await res.json();
+  if(d.success){showToast('// '+selectedType.toUpperCase()+' ADDED: '+d.hw_id);setTimeout(()=>window.location.href='/hardware/',1300);}
+  else{showToast('ERROR: '+d.error,'error');document.getElementById('btn-text').style.display='inline';document.getElementById('btn-loader').style.display='none';document.getElementById('submit-btn').disabled=false;}
 });
 
-async function importExcel() {
-  const file = document.getElementById('excel-file').files[0];
-  if (!file) return;
-  const fd = new FormData();
-  fd.append('excel_file', file);
-  fd.append('csrfmiddlewaretoken', '{{ csrf_token }}');
-  showToast('// IMPORTING DATA...', 'warn');
-  const res = await fetch('/hardware/import/', {method:'POST', body:fd});
-  const d = await res.json();
-  const box = document.getElementById('import-result');
-  box.style.display = 'block';
-  if (d.success) {
-    box.style.color = 'var(--green)';
-    box.innerHTML = `✓ IMPORT COMPLETE — Added: ${d.added} | Skipped (duplicate): ${d.skipped}` + (d.errors.length ? `<br><span style="color:var(--amber)">Issues: ${d.errors.slice(0,3).join(' | ')}</span>` : '');
-    showToast(`// IMPORTED ${d.added} RECORDS`);
-  } else {
-    box.style.color = 'var(--red)';
-    box.innerHTML = '✗ IMPORT FAILED: ' + d.error;
-    showToast('IMPORT FAILED', 'error');
-  }
+async function importExcel(){
+  const file=document.getElementById('excel-file').files[0];
+  if(!file)return;
+  const fd=new FormData();fd.append('excel_file',file);
+  const csrf=document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1];
+  fd.append('csrfmiddlewaretoken',csrf);
+  showToast('// IMPORTING...','warn');
+  const res=await fetch('/hardware/import/',{method:'POST',body:fd});
+  const d=await res.json();
+  const box=document.getElementById('import-result');box.style.display='block';
+  if(d.success){box.style.color='var(--green)';box.innerHTML=`✓ Added: ${d.added} | Skipped: ${d.skipped}`+(d.errors.length?`<br><span style="color:var(--amber)">Issues: ${d.errors.slice(0,3).join(' | ')}</span>`:'');showToast(`// IMPORTED ${d.added} RECORDS`);}
+  else{box.style.color='var(--red)';box.innerHTML='✗ FAILED: '+d.error;showToast('IMPORT FAILED','error');}
 }
 </script>
 {% endblock %}

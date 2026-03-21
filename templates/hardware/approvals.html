@@ -1,0 +1,354 @@
+{% extends "base.html" %}
+{% block title %}— Approvals{% endblock %}
+{% block nav_approvals %}active{% endblock %}
+{% block extra_head %}
+<style>
+.hw-search-results{background:var(--bg2);border:1px solid var(--accent);border-radius:6px;margin-top:4px;max-height:220px;overflow-y:auto;display:none;}
+.hw-result-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.1s;}
+.hw-result-item:hover{background:rgba(0,245,255,0.06);}
+.hw-selected-box{background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);border-radius:5px;padding:10px 14px;margin-top:6px;display:none;}
+.tab-link{padding:10px 18px;border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;text-decoration:none;display:inline-block;}
+.tab-active-resign{background:rgba(0,245,255,0.12);color:var(--accent);border:1px solid var(--accent);}
+.tab-active-transfer{background:rgba(168,85,247,0.12);color:var(--accent3);border:1px solid var(--accent3);}
+.tab-active-hw{background:rgba(255,180,0,0.12);color:var(--amber);border:1px solid var(--amber);}
+.tab-active-tasks{background:rgba(0,255,136,0.12);color:var(--green);border:1px solid var(--green);}
+.tab-inactive{background:var(--bg3);color:var(--muted);border:1px solid var(--border);}
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">APPROVALS & TASKS</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// {{ total_pending }} PENDING</div>
+  </div>
+</div>
+
+{% with tab=request.GET.tab|default:"resign" %}
+
+<!-- TABS -->
+<div style="display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;">
+  <a href="?tab=resign" class="tab-link {% if tab == 'resign' %}tab-active-resign{% else %}tab-inactive{% endif %}">✉ RESIGNATIONS ({{ resignations|length }})</a>
+  <a href="?tab=transfer" class="tab-link {% if tab == 'transfer' %}tab-active-transfer{% else %}tab-inactive{% endif %}">🔄 TRANSFERS ({{ transfers|length }})</a>
+  <a href="?tab=hw" class="tab-link {% if tab == 'hw' %}tab-active-hw{% else %}tab-inactive{% endif %}">🔧 HW REQUESTS ({{ hw_approvals|length }})</a>
+  <a href="?tab=tasks" class="tab-link {% if tab == 'tasks' %}tab-active-tasks{% else %}tab-inactive{% endif %}">📋 TASKS ({{ tasks|length }})</a>
+</div>
+
+<!-- ══ RESIGNATIONS ══════════════════════════════════════════════════════════ -->
+{% if tab == 'resign' %}
+{% for r in resignations %}
+<div class="card" style="padding:18px;margin-bottom:12px;border-left:3px solid var(--accent2);">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px;">
+    <div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;">{{ r.employee_name }}</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent2);">{{ r.emp_id }} · {{ r.submitted_at|date:"d M Y" }}{% if r.location %} · 📍 {{ r.location }}{% endif %}</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <form method="post" action="/resignations/{{ r.pk }}/" style="display:inline;">{% csrf_token %}<input type="hidden" name="action" value="approve"><button type="submit" class="btn btn-green" style="font-size:11px;">✓ APPROVE</button></form>
+      <button class="btn btn-danger" style="font-size:11px;" onclick="doDecline('/resignations/{{ r.pk }}/')">✕ DECLINE</button>
+    </div>
+  </div>
+  <div style="font-size:13px;margin-bottom:8px;"><b style="color:var(--muted);">Reason:</b> {{ r.reason }}</div>
+  {% if r.resignation_letter %}<div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;padding:12px;font-size:12px;line-height:1.7;max-height:100px;overflow-y:auto;white-space:pre-wrap;">{{ r.resignation_letter }}</div>{% endif %}
+</div>
+{% empty %}<div class="empty-state"><div class="empty-state-icon">✉</div><div class="empty-state-text">NO PENDING RESIGNATIONS</div></div>{% endfor %}
+{% endif %}
+
+<!-- ══ TRANSFERS ═════════════════════════════════════════════════════════════ -->
+{% if tab == 'transfer' %}
+{% for t in transfers %}
+<div class="card" style="padding:18px;margin-bottom:12px;border-left:3px solid var(--accent3);">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+    <div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;">{{ t.employee.name }}</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent3);">{{ t.employee.emp_id }} · {{ t.created_at|date:"d M Y" }} · Requested by {{ t.requested_by.username }}</div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-family:'Share Tech Mono',monospace;font-size:12px;">📍 {{ t.from_location }} → <b style="color:var(--green);">{{ t.to_location }}</b></span>
+      <form method="post" action="/transfers/{{ t.pk }}/review/" style="display:inline;">{% csrf_token %}<input type="hidden" name="action" value="approve"><button type="submit" class="btn btn-green" style="font-size:11px;">✓ APPROVE</button></form>
+      <button class="btn btn-danger" style="font-size:11px;" onclick="doDecline('/transfers/{{ t.pk }}/review/')">✕ DECLINE</button>
+    </div>
+  </div>
+  {% if t.reason %}<div style="font-size:13px;color:var(--muted);">{{ t.reason }}</div>{% endif %}
+</div>
+{% empty %}<div class="empty-state"><div class="empty-state-icon">🔄</div><div class="empty-state-text">NO PENDING TRANSFERS</div></div>{% endfor %}
+{% endif %}
+
+<!-- ══ HW REQUESTS ═══════════════════════════════════════════════════════════ -->
+{% if tab == 'hw' %}
+{% for ha in hw_approvals %}
+<div class="card" style="padding:18px;margin-bottom:12px;border-left:3px solid var(--amber);">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+    <div>
+      <div style="font-family:'Orbitron',monospace;font-size:14px;">{{ ha.employee_name }}</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--amber);">{{ ha.emp_id }} · {{ ha.get_request_type_display }} · {{ ha.submitted_at|date:"d M Y" }}{% if ha.location %} · 📍 {{ ha.location }}{% endif %}</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a href="?tab=hw&approve={{ ha.pk }}" class="btn btn-green" style="font-size:11px;">✓ APPROVE & ASSIGN</a>
+      <button class="btn btn-danger" style="font-size:11px;" onclick="doDecline('/approvals/hw/{{ ha.pk }}/')">✕ DECLINE</button>
+    </div>
+  </div>
+  {% if ha.hw_id_text %}<div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);margin-bottom:4px;">Reported HW: {{ ha.hw_id_text }}</div>{% endif %}
+  <div style="font-size:13px;color:var(--muted);">{{ ha.issue_description }}</div>
+</div>
+
+{% if request.GET.approve == ha.pk|stringformat:"s" %}
+<!-- ASSIGN PANEL -->
+<div class="card" style="padding:22px;margin-bottom:16px;border:2px solid var(--green);">
+  <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--green);margin-bottom:6px;">ASSIGN HARDWARE TO {{ ha.employee_name }}</div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:18px;">{{ ha.emp_id }} · {{ ha.issue_description }}</div>
+
+  <!-- HW SEARCH — same as employee_add -->
+  <div class="form-group">
+    <label class="form-label">Search & Select Hardware (Unassigned)</label>
+    <input type="text" id="hw-inp" class="form-control"
+      placeholder="Type hardware ID, brand, or type to search..."
+      autocomplete="off"
+      oninput="hwSearch(this.value)">
+    <div class="hw-search-results" id="hw-results"></div>
+    <div class="hw-selected-box" id="hw-sel-box">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div id="hw-sel-text" style="font-size:13px;font-weight:700;"></div>
+        <button type="button" onclick="hwClear()" style="background:rgba(255,59,59,0.1);border:1px solid rgba(255,59,59,0.2);color:var(--red);border-radius:4px;padding:4px 10px;cursor:pointer;font-size:11px;">✕ REMOVE</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label class="form-label">Note to Employee (Optional)</label>
+    <textarea id="hw-note" class="form-control" rows="2" placeholder="e.g. New printer assigned. Collect from IT room."></textarea>
+  </div>
+
+  <!-- ASSIGN TO ADMIN -->
+  <div style="padding:12px;background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.2);border-radius:6px;margin-bottom:16px;">
+    <label class="form-label" style="color:var(--accent3);">OR FORWARD TO ADMIN</label>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;">
+      <select id="admin-sel" class="filter-select" style="flex:1;min-width:160px;">
+        <option value="">-- Select Admin --</option>
+        {% for u in portal_users %}<option value="{{ u.pk }}">{{ u.username }} ({{ u.role }})</option>{% endfor %}
+      </select>
+      <button class="btn btn-purple" style="font-size:11px;" onclick="assignToAdmin({{ ha.pk }})">📨 ASSIGN & NOTIFY</button>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-green" onclick="confirmApprove({{ ha.pk }})">✓ CONFIRM APPROVE</button>
+    <a href="?tab=hw" class="btn btn-ghost">CANCEL</a>
+  </div>
+  <div id="approve-result" style="display:none;margin-top:12px;padding:10px;border-radius:5px;font-family:'Share Tech Mono',monospace;font-size:11px;"></div>
+</div>
+{% endif %}
+
+{% empty %}<div class="empty-state"><div class="empty-state-icon">🔧</div><div class="empty-state-text">NO PENDING HW REQUESTS</div></div>{% endfor %}
+{% endif %}
+
+<!-- ══ TASKS ══════════════════════════════════════════════════════════════════ -->
+{% if tab == 'tasks' %}
+<div style="display:flex;justify-content:flex-end;margin-bottom:14px;">
+  <button class="btn btn-primary" onclick="openModal('task-modal')">+ ADD TASK</button>
+</div>
+{% for task in tasks %}
+<div class="card" style="padding:16px;margin-bottom:10px;border-left:3px solid var(--green);">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+        <div style="font-size:15px;font-weight:700;">{{ task.title }}</div>
+        <span class="badge badge-{{ task.status }}">{{ task.status }}</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:{% if task.priority == 'urgent' %}var(--red){% elif task.priority == 'high' %}var(--amber){% else %}var(--muted){% endif %};">{{ task.priority|upper }}</span>
+      </div>
+      {% if task.description %}<div style="font-size:13px;color:var(--muted);">{{ task.description }}</div>{% endif %}
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;">
+        {% if task.assigned_to %}👤 {{ task.assigned_to.username }}{% endif %}
+        {% if task.due_date %} · 📅 {{ task.due_date }}{% endif %}
+        {% if task.location %} · 📍 {{ task.location }}{% endif %}
+      </div>
+    </div>
+    <form method="post" action="/tasks/{{ task.pk }}/update/">
+      {% csrf_token %}
+      <select name="status" class="filter-select" onchange="this.form.submit()">
+        <option value="open" {% if task.status == 'open' %}selected{% endif %}>Open</option>
+        <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
+        <option value="cancelled" {% if task.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+      </select>
+    </form>
+  </div>
+</div>
+{% empty %}<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">NO ACTIVE TASKS</div></div>{% endfor %}
+{% endif %}
+
+{% endwith %}
+
+<!-- DECLINE MODAL -->
+<div class="modal-overlay" id="decline-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('decline-modal')">✕</button>
+    <div class="modal-title" style="color:var(--red);">✕ DECLINE — ADD REASON</div>
+    <div class="form-group"><label class="form-label">Reason</label><textarea class="form-control" id="decline-note" rows="3" placeholder="Reason for declining..."></textarea></div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-danger" onclick="confirmDecline()">CONFIRM DECLINE</button>
+      <button class="btn btn-ghost" onclick="closeModal('decline-modal')">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADD TASK MODAL -->
+<div class="modal-overlay" id="task-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('task-modal')">✕</button>
+    <div class="modal-title">📋 ADD TASK</div>
+    <form method="post" action="/tasks/create/">
+      {% csrf_token %}
+      <div class="form-group"><label class="form-label">Title *</label><input type="text" name="title" class="form-control" required></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="2"></textarea></div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Priority</label>
+          <select name="priority" class="form-control"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option><option value="urgent">Urgent</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Due Date</label><input type="date" name="due_date" class="form-control"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Assign To</label>
+        <select name="assigned_to" class="form-control">
+          <option value="">-- Anyone --</option>
+          {% for u in portal_users %}<option value="{{ u.pk }}">{{ u.username }} ({{ u.role }})</option>{% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">CREATE TASK</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+// ── DECLINE ──────────────────────────────────────────────────────────────────
+var _dUrl = '';
+function doDecline(url) { _dUrl = url; document.getElementById('decline-note').value = ''; openModal('decline-modal'); }
+
+function getCsrf() {
+  var c = document.cookie.split(';');
+  for (var i = 0; i < c.length; i++) {
+    var p = c[i].trim();
+    if (p.startsWith('csrftoken=')) return p.split('=')[1];
+  }
+  return '';
+}
+
+async function confirmDecline() {
+  var fd = new FormData();
+  fd.append('action', 'decline');
+  fd.append('note', document.getElementById('decline-note').value);
+  fd.append('csrfmiddlewaretoken', getCsrf());
+  var r = await fetch(_dUrl, {method:'POST', body:fd});
+  var d = await r.json();
+  if (d.success) { closeModal('decline-modal'); showToast('// DECLINED'); setTimeout(function(){ location.reload(); }, 1000); }
+  else showToast('ERROR: ' + d.error, 'error');
+}
+
+// ── HW SEARCH ────────────────────────────────────────────────────────────────
+var _hwAll = null;
+var _hwTimer = null;
+var _hwSelId = '';
+
+async function hwSearch(q) {
+  clearTimeout(_hwTimer);
+  _hwTimer = setTimeout(async function() {
+    // Load all unassigned hardware once
+    if (!_hwAll) {
+      var r = await fetch('/hardware/search/?q=.');
+      var d = await r.json();
+      _hwAll = d.results || [];
+    }
+    var box = document.getElementById('hw-results');
+    var ql = q.toLowerCase();
+    var list = _hwAll.filter(function(h) {
+      return !q || h.hw_id.toLowerCase().indexOf(ql) > -1 ||
+        h.brand.toLowerCase().indexOf(ql) > -1 ||
+        h.model.toLowerCase().indexOf(ql) > -1 ||
+        h.type.toLowerCase().indexOf(ql) > -1 ||
+        h.serial.toLowerCase().indexOf(ql) > -1;
+    });
+    if (!list.length) { box.innerHTML = '<div style="padding:12px;font-family:Share Tech Mono,monospace;font-size:11px;color:var(--muted);">No unassigned hardware found</div>'; box.style.display = 'block'; return; }
+    box.innerHTML = list.map(function(h) {
+      return '<div class="hw-result-item" onclick="hwPick(\'' + h.id + '\',\'' + h.hw_id + '\',\'' + (h.brand + ' ' + h.model).replace(/'/g,'') + '\',\'' + h.type + '\')">' +
+        '<div style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--accent);">' + h.hw_id + ' · ' + h.type + '</div>' +
+        '<div style="font-weight:700;">' + h.brand + ' ' + h.model + '</div>' +
+        '<div style="font-size:11px;color:var(--muted);">S/N: ' + h.serial + '</div></div>';
+    }).join('');
+    box.style.display = 'block';
+  }, 200);
+}
+
+function hwPick(id, hwId, name, type) {
+  _hwSelId = id;
+  document.getElementById('hw-inp').value = hwId + ' — ' + name;
+  document.getElementById('hw-sel-text').innerHTML =
+    '<span style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--accent);">' + hwId + ' · ' + type + '</span><br>' + name;
+  document.getElementById('hw-sel-box').style.display = 'block';
+  document.getElementById('hw-results').style.display = 'none';
+}
+
+function hwClear() {
+  _hwSelId = '';
+  document.getElementById('hw-inp').value = '';
+  document.getElementById('hw-sel-box').style.display = 'none';
+}
+
+// Show all on focus
+document.addEventListener('DOMContentLoaded', function() {
+  var inp = document.getElementById('hw-inp');
+  if (inp) {
+    inp.addEventListener('focus', function() { hwSearch(this.value); });
+    inp.addEventListener('input', function() { hwSearch(this.value); });
+  }
+});
+
+document.addEventListener('click', function(e) {
+  var box = document.getElementById('hw-results');
+  var inp = document.getElementById('hw-inp');
+  if (box && inp && !inp.contains(e.target) && !box.contains(e.target)) {
+    box.style.display = 'none';
+  }
+});
+
+// ── CONFIRM APPROVE ───────────────────────────────────────────────────────────
+async function confirmApprove(pk) {
+  var note = document.getElementById('hw-note') ? document.getElementById('hw-note').value : '';
+  var result = document.getElementById('approve-result');
+  var fd = new FormData();
+  fd.append('action', 'approve');
+  fd.append('assigned_hw_id', _hwSelId);
+  fd.append('note', note);
+  fd.append('csrfmiddlewaretoken', getCsrf());
+  var r = await fetch('/approvals/hw/' + pk + '/', {method:'POST', body:fd});
+  var d = await r.json();
+  if (d.success) {
+    result.style.display = 'block';
+    result.style.color = 'var(--green)';
+    result.style.background = 'rgba(0,255,136,0.06)';
+    result.style.border = '1px solid rgba(0,255,136,0.2)';
+    result.textContent = '✓ ' + d.message;
+    showToast('// APPROVED!');
+    setTimeout(function() { window.location.href = '/approvals/?tab=hw'; }, 1500);
+  } else {
+    result.style.display = 'block';
+    result.style.color = 'var(--red)';
+    result.textContent = '✗ ' + (d.error || 'Failed');
+    showToast('ERROR: ' + (d.error || 'Failed'), 'error');
+  }
+}
+
+// ── ASSIGN TO ADMIN ───────────────────────────────────────────────────────────
+async function assignToAdmin(pk) {
+  var sel = document.getElementById('admin-sel');
+  if (!sel || !sel.value) { showToast('Select an admin first!', 'error'); return; }
+  var fd = new FormData();
+  fd.append('action', 'assign_admin');
+  fd.append('admin_id', sel.value);
+  fd.append('csrfmiddlewaretoken', getCsrf());
+  var r = await fetch('/approvals/hw/' + pk + '/', {method:'POST', body:fd});
+  var d = await r.json();
+  if (d.success) { showToast('// Admin notified via Messages!'); sel.value = ''; }
+  else showToast('ERROR: ' + d.error, 'error');
+}
+</script>
+{% endblock %}

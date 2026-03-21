@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}— Resignation Detail{% endblock %}
+{% block nav_resign %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="color:var(--accent2);">RESIGNATION DETAIL</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// {{ res.employee_name }} — {{ res.emp_id }}</div>
+  </div>
+  <span class="badge badge-{{ res.status }}" style="font-size:12px;padding:6px 14px;">{{ res.status }}</span>
+</div>
+<div class="card" style="padding:24px;max-width:700px;">
+  <div class="detail-grid" style="margin-bottom:20px;">
+    <div class="detail-row"><div class="detail-key">Employee Name</div><div class="detail-val">{{ res.employee_name }}</div></div>
+    <div class="detail-row"><div class="detail-key">Employee ID</div><div class="detail-val" style="color:var(--accent);">{{ res.emp_id }}</div></div>
+    <div class="detail-row"><div class="detail-key">Reason</div><div class="detail-val">{{ res.reason }}</div></div>
+    <div class="detail-row"><div class="detail-key">Submitted On</div><div class="detail-val">{{ res.submitted_at|date:"d M Y" }}</div></div>
+    {% if res.last_working_date %}<div class="detail-row"><div class="detail-key">Last Working Date</div><div class="detail-val">{{ res.last_working_date }}</div></div>{% endif %}
+    {% if res.location %}<div class="detail-row"><div class="detail-key">Location</div><div class="detail-val">{{ res.location }}</div></div>{% endif %}
+  </div>
+  {% if res.resignation_letter %}
+  <div style="margin-bottom:20px;">
+    <div class="form-label" style="margin-bottom:8px;">Resignation Letter</div>
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;padding:16px;font-size:13px;line-height:1.8;white-space:pre-wrap;">{{ res.resignation_letter }}</div>
+  </div>
+  {% endif %}
+  {% if res.status == 'pending' %}
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-green" onclick="reviewResignation({{ res.pk }},'approve')">✓ APPROVE</button>
+    <button class="btn btn-danger" onclick="reviewResignation({{ res.pk }},'decline')">✕ DECLINE</button>
+    <a href="/resignations/" class="btn btn-ghost">← BACK</a>
+  </div>
+  {% else %}
+  <a href="/resignations/" class="btn btn-ghost">← BACK</a>
+  {% endif %}
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+async function reviewResignation(pk,action){
+  const note=prompt('Add a note (optional):') || '';
+  const fd=new FormData();fd.append('action',action);fd.append('note',note);
+  fd.append('csrfmiddlewaretoken',document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1]);
+  const res=await fetch(`/resignations/${pk}/`,{method:'POST',body:fd});
+  const d=await res.json();
+  if(d.success){showToast('// '+d.message);setTimeout(()=>window.location.href='/resignations/',1200);}
+  else showToast('ERROR: '+d.error,'error');
+}
+</script>
+{% endblock %}

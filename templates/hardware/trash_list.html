@@ -1,98 +1,33 @@
 {% extends "base.html" %}
 {% block title %}— Trash Zone{% endblock %}
 {% block nav_trash %}active{% endblock %}
-
 {% block extra_head %}
 <style>
-.trash-zone-bg {
-  position: relative;
-}
-.trash-zone-bg::before {
-  content: '';
-  position: absolute; inset: 0; z-index: 0;
-  background-image:
-    repeating-linear-gradient(
-      45deg,
-      transparent,
-      transparent 20px,
-      rgba(255,59,59,0.02) 20px,
-      rgba(255,59,59,0.02) 40px
-    );
-  pointer-events: none;
-  border-radius: 8px;
-}
-.trash-card {
-  background: var(--bg3);
-  border: 1px solid rgba(255,59,59,0.2);
-  border-radius: 8px; padding: 20px;
-  position: relative; overflow: hidden;
-  transition: all 0.2s;
-}
-.trash-card:hover {
-  border-color: var(--red);
-  transform: translateY(-2px);
-}
-.trash-card::before {
-  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-  background: linear-gradient(to right, transparent, var(--red), transparent);
-  opacity: 0.5;
-}
-.trash-card::after {
-  content: '⊗';
-  position: absolute; top: 14px; right: 14px;
-  font-size: 16px; color: rgba(255,59,59,0.2);
-}
-.trash-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 14px;
-}
-.reason-pill {
-  display: inline-block;
-  background: rgba(255,59,59,0.08);
-  border: 1px solid rgba(255,59,59,0.2);
-  border-radius: 4px;
-  padding: 3px 10px;
-  font-size: 11px; color: var(--red);
-  font-family: 'Share Tech Mono', monospace;
-  letter-spacing: 1px;
-}
-.condition-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: 4px;
-  font-family: 'Share Tech Mono', monospace;
-  font-size: 10px; letter-spacing: 1px;
-  text-transform: uppercase;
-}
-.condition-dead { background: rgba(255,59,59,0.12); color: var(--red); border: 1px solid rgba(255,59,59,0.25); }
-.condition-damaged { background: rgba(255,180,0,0.12); color: var(--amber); border: 1px solid rgba(255,180,0,0.25); }
-.condition-obsolete { background: rgba(100,116,139,0.12); color: var(--muted); border: 1px solid rgba(100,116,139,0.25); }
-.condition-other { background: rgba(168,85,247,0.12); color: var(--accent3); border: 1px solid rgba(168,85,247,0.25); }
+.trash-card{background:var(--bg3);border:1px solid rgba(255,59,59,0.2);border-radius:8px;padding:18px;margin-bottom:12px;position:relative;overflow:hidden;transition:all 0.2s;}
+.trash-card:hover{border-color:var(--red);}
+.trash-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,var(--red),transparent);opacity:0.5;}
+.trash-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;}
+.sold-badge{background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);color:var(--green);padding:3px 10px;border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:1px;}
 </style>
 {% endblock %}
-
 {% block content %}
 <div class="page-header">
   <div>
-    <div class="page-title" style="color:var(--red);text-shadow:0 0 15px rgba(255,59,59,0.4);">TRASH ZONE</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// {{ trash|length }} DISPOSED UNITS IN GRAVEYARD</div>
+    <div class="page-title" style="color:var(--red);">TRASH ZONE</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// {{ trash|length }} DISPOSED UNITS</div>
   </div>
-  <a href="/trash/add/" class="btn btn-danger">⊗ ADD TO TRASH</a>
+  {% if user.can_edit %}<a href="/trash/add/" class="btn btn-danger">⊗ ADD TO TRASH</a>{% endif %}
 </div>
 
-<!-- TRASH HEADER WARNING BANNER -->
-<div class="trash-header trash-zone-bg" style="margin-bottom:24px;">
-  <div class="trash-icon-big">☠</div>
+<div style="background:rgba(255,59,59,0.05);border:1px solid rgba(255,59,59,0.2);border-radius:8px;padding:16px 22px;margin-bottom:22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+  <div style="font-size:32px;filter:drop-shadow(0 0 8px var(--red));">☠</div>
   <div>
-    <div class="trash-title">HARDWARE GRAVEYARD</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">
-      DEAD · DAMAGED · OBSOLETE · DISPOSED EQUIPMENT RECORDS
-    </div>
+    <div style="font-family:'Orbitron',monospace;font-size:16px;color:var(--red);">HARDWARE GRAVEYARD</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:3px;letter-spacing:1px;">DEAD · DAMAGED · OBSOLETE · DISPOSED EQUIPMENT</div>
   </div>
   <div style="margin-left:auto;text-align:right;">
-    <div style="font-family:'Orbitron',monospace;font-size:36px;font-weight:900;color:var(--red);text-shadow:0 0 20px rgba(255,59,59,0.5);">{{ trash|length }}</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;">TOTAL UNITS</div>
+    <div style="font-family:'Orbitron',monospace;font-size:32px;font-weight:900;color:var(--red);">{{ trash|length }}</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">TOTAL UNITS</div>
   </div>
 </div>
 
@@ -100,43 +35,39 @@
 <div class="trash-grid">
   {% for t in trash %}
   <div class="trash-card">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-      <div style="width:40px;height:40px;border-radius:6px;background:rgba(255,59,59,0.1);border:1px solid rgba(255,59,59,0.2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">
-        {% if t.hardware_type == "Laptop" %}💻{% elif t.hardware_type == "Camera" %}📷{% elif t.hardware_type == "Printer" %}🖨️{% elif t.hardware_type == "Monitor" %}🖥️{% elif t.hardware_type == "Mouse" %}🖱️{% elif t.hardware_type == "Keyboard" %}⌨️{% elif t.hardware_type == "Scanner" %}📠{% elif t.hardware_type == "CPU" %}🔧{% elif t.hardware_type == "Server" %}🗄️{% endif %}
-      </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <div style="width:38px;height:38px;border-radius:6px;background:rgba(255,59,59,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">⊗</div>
       <div style="flex:1;min-width:0;">
         <div style="font-weight:700;font-size:14px;">{{ t.brand }} {{ t.model_name }}</div>
         <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--red);">{{ t.hw_id }}</div>
       </div>
-    </div>
-
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
-      <span class="badge badge-{{ t.hardware_type|lower }}">{{ t.hardware_type }}</span>
-      <span class="condition-badge condition-{{ t.condition|lower }}">{{ t.condition }}</span>
-    </div>
-
-    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:4px;letter-spacing:1px;text-transform:uppercase;">Reason</div>
-    <div style="font-size:13px;margin-bottom:12px;color:var(--text);">{{ t.reason }}</div>
-
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
-      <div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;">SERIAL</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;">{{ t.serial_number }}</div>
-      </div>
-      <div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;">DISPOSED</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;">{{ t.disposed_date }}</div>
-      </div>
-      {% if t.original_price %}
-      <div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--muted);letter-spacing:1px;">ORIG. PRICE</div>
-        <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--red);">₹{{ t.original_price }}</div>
-      </div>
+      {% if t.sold_price %}
+      <span class="sold-badge">SOLD ₹{{ t.sold_price }}</span>
       {% endif %}
     </div>
 
-    {% if t.notes %}
-    <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,59,59,0.1);font-size:12px;color:var(--muted);">{{ t.notes }}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+      <span class="badge badge-{{ t.hardware_type|lower }}">{{ t.hardware_type }}</span>
+      <span class="badge badge-trash">{{ t.condition }}</span>
+    </div>
+
+    <div style="font-size:13px;margin-bottom:10px;color:var(--text);">{{ t.reason }}</div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;margin-bottom:10px;">
+      <div><div class="detail-key">Serial</div><div style="font-family:'Share Tech Mono',monospace;font-size:11px;">{{ t.serial_number }}</div></div>
+      <div><div class="detail-key">Disposed</div><div style="font-family:'Share Tech Mono',monospace;font-size:11px;">{{ t.disposed_date }}</div></div>
+      {% if t.original_price %}<div><div class="detail-key">Original Price</div><div style="color:var(--muted);">₹{{ t.original_price }}</div></div>{% endif %}
+      {% if t.sold_price %}<div><div class="detail-key">Sold For</div><div style="color:var(--green);">₹{{ t.sold_price }}</div></div>{% endif %}
+      {% if t.sold_to %}<div><div class="detail-key">Sold To</div><div>{{ t.sold_to }}</div></div>{% endif %}
+      {% if t.sold_date %}<div><div class="detail-key">Sold Date</div><div style="font-family:'Share Tech Mono',monospace;font-size:11px;">{{ t.sold_date }}</div></div>{% endif %}
+    </div>
+
+    {% if user.can_edit %}
+    {% if not t.sold_price %}
+    <button class="btn btn-green" style="width:100%;font-size:11px;justify-content:center;" onclick="openSoldModal({{ t.pk }})">💰 MARK AS SOLD</button>
+    {% else %}
+    <button class="btn btn-ghost" style="width:100%;font-size:11px;justify-content:center;" onclick="openSoldModal({{ t.pk }})">✎ UPDATE SALE INFO</button>
+    {% endif %}
     {% endif %}
   </div>
   {% endfor %}
@@ -144,8 +75,48 @@
 {% else %}
 <div class="empty-state" style="padding:80px 20px;">
   <div class="empty-state-icon" style="font-size:60px;">⊗</div>
-  <div class="empty-state-text" style="font-size:14px;">TRASH ZONE IS EMPTY — ALL HARDWARE OPERATIONAL</div>
-  <a href="/trash/add/" class="btn btn-danger" style="margin-top:20px;">⊗ ADD FIRST TRASH ITEM</a>
+  <div class="empty-state-text" style="font-size:14px;">TRASH ZONE IS EMPTY</div>
+  {% if user.can_edit %}<a href="/trash/add/" class="btn btn-danger" style="margin-top:20px;">⊗ ADD FIRST ITEM</a>{% endif %}
 </div>
 {% endif %}
+
+<!-- SOLD MODAL -->
+<div class="modal-overlay" id="sold-modal">
+  <div class="modal" style="border-color:var(--green);">
+    <button class="modal-close" onclick="closeModal('sold-modal')">✕</button>
+    <div class="modal-title" style="color:var(--green);">💰 MARK AS SOLD</div>
+    <form id="sold-form">
+      {% csrf_token %}
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Sold Price (₹) *</label><input type="number" name="sold_price" class="form-control" placeholder="e.g. 5000" step="0.01" required></div>
+        <div class="form-group"><label class="form-label">Sale Date</label><input type="date" name="sold_date" class="form-control"></div>
+      </div>
+      <div class="form-group"><label class="form-label">Sold To</label><input type="text" name="sold_to" class="form-control" placeholder="Name or company"></div>
+      <div class="form-group"><label class="form-label">Notes</label><textarea name="sold_notes" class="form-control" rows="2" placeholder="Any additional info..."></textarea></div>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-green">SAVE SALE INFO</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('sold-modal')">CANCEL</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+let currentTrashPk = null;
+function openSoldModal(pk){
+  currentTrashPk=pk;
+  openModal('sold-modal');
+}
+document.getElementById('sold-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const fd=new FormData(this);
+  const csrf=document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1];
+  fd.append('csrfmiddlewaretoken',csrf);
+  const res=await fetch(`/trash/${currentTrashPk}/sold/`,{method:'POST',body:fd});
+  const d=await res.json();
+  if(d.success){showToast('// SALE INFO SAVED');closeModal('sold-modal');setTimeout(()=>location.reload(),1000);}
+  else showToast('ERROR: '+d.error,'error');
+});
+</script>
 {% endblock %}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Run: py load_commands.py  — adds all 3 auto-fetch scripts to portal"""
+"""Run: py load_commands.py"""
 import os, sys, django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'db_portal.settings')
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -13,10 +13,9 @@ admin = CustomUser.objects.first()
 CommandLog.objects.all().delete()
 print("Cleared old commands...")
 
-# Read script files
 def read_file(path):
     try:
-        with open(path, 'r') as f:
+        with open(path, 'r', encoding='utf-8') as f:
             return f.read()
     except:
         return "# File not found"
@@ -30,21 +29,21 @@ commands = [
         "title": "Auto Fetch & Save to Portal (Python)",
         "platform": "python",
         "category": "DB Portal",
-        "description": "Run on any PC — fetches ALL hardware info (CPU, RAM, GPU, Serial, IP, MAC) and saves automatically to this portal. No copy-paste needed!",
+        "description": "Run on any PC — auto detects CPU, RAM, GPU, Serial, IP, MAC and saves to portal. Only asks Location and Username/Password!",
         "command": py_script,
     },
     {
         "title": "Auto Fetch & Save to Portal (PowerShell)",
         "platform": "powershell",
         "category": "DB Portal",
-        "description": "Run on any Windows PC using PowerShell — fetches all hardware info and saves directly to portal.",
+        "description": "Run on any Windows PC using PowerShell — auto detects all hardware info and saves directly to portal.",
         "command": ps_script,
     },
     {
         "title": "Auto Fetch & Save to Portal (CMD)",
         "platform": "cmd",
         "category": "DB Portal",
-        "description": "Run on any Windows PC using Command Prompt — launches the Python auto-fetch script.",
+        "description": "Double-click this .bat file — launches the Python auto-fetch script automatically.",
         "command": bat_script,
     },
 ]
@@ -53,4 +52,4 @@ for c in commands:
     obj = CommandLog.objects.create(**c, created_by=admin)
     print(f"  Added: {obj.title}")
 
-print("\nDone! Visit http://127.0.0.1:8000/commands/")
+print("\nDone! Visit /commands/ to see them")

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}— Transfer Employee{% endblock %}
+{% block nav_transfer %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="color:var(--accent3);">EMPLOYEE TRANSFER</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// TRANSFER EMPLOYEE FROM ONE LOCATION TO ANOTHER</div>
+  </div>
+</div>
+
+<div style="background:rgba(168,85,247,0.05);border:1px solid rgba(168,85,247,0.2);border-radius:8px;padding:16px 20px;margin-bottom:22px;">
+  <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent3);letter-spacing:2px;margin-bottom:6px;">HOW TRANSFERS WORK</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:1.9;letter-spacing:1px;">
+    ★ <span style="color:var(--green);">Super Admin (no location restriction)</span> — Transfer is immediate, no approval needed<br>
+    ★ <span style="color:var(--amber);">Admin (with location)</span> — Transfer request goes to Approvals tab for Super Admin review<br>
+    ★ All hardware assigned to the employee also moves to the new location
+  </div>
+</div>
+
+<div class="card" style="max-width:600px;padding:28px;">
+  <form id="transfer-form">
+    {% csrf_token %}
+    <div class="form-group">
+      <label class="form-label">Select Employee *</label>
+      <select name="employee_id" class="form-control" required id="emp-select" onchange="showEmpInfo(this)">
+        <option value="">-- Select Employee --</option>
+        {% for emp in employees %}
+        <option value="{{ emp.pk }}" data-location="{{ emp.location }}" data-dept="{{ emp.department }}">
+          {{ emp.emp_id }} — {{ emp.name }} ({{ emp.location|default:"No Location" }})
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div id="emp-info" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:14px;font-family:'Share Tech Mono',monospace;font-size:11px;">
+      <div>Current Location: <span id="emp-loc" style="color:var(--accent);"></span></div>
+      <div>Department: <span id="emp-dept" style="color:var(--muted);"></span></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Transfer To Location *</label>
+      <input type="text" name="to_location" class="form-control" placeholder="e.g. Delhi Office" list="loc-list" required>
+      <datalist id="loc-list">{% for loc in all_locations %}<option value="{{ loc }}">{% endfor %}</datalist>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Reason for Transfer</label>
+      <textarea name="reason" class="form-control" rows="3" placeholder="Why is this employee being transferred?"></textarea>
+    </div>
+    <div style="background:rgba(255,180,0,0.05);border:1px solid rgba(255,180,0,0.2);border-radius:5px;padding:10px 14px;margin-bottom:16px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--amber);">
+      {% if user.is_superadmin_role and not user.has_location_filter %}
+      ★ YOUR ROLE: Transfer will be IMMEDIATE (Super Admin)
+      {% else %}
+      ★ YOUR ROLE: Transfer will require SUPERADMIN APPROVAL
+      {% endif %}
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button type="submit" class="btn btn-purple" id="submit-btn">
+        <span id="btn-text">🔄 SUBMIT TRANSFER</span>
+        <span id="btn-loader" class="loader" style="display:none;border-top-color:#fff;"></span>
+      </button>
+      <a href="/approvals/" class="btn btn-ghost">CANCEL</a>
+    </div>
+  </form>
+  <div id="transfer-msg" style="display:none;margin-top:14px;padding:12px;border-radius:5px;font-family:'Share Tech Mono',monospace;font-size:11px;"></div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function showEmpInfo(sel){
+  const opt=sel.options[sel.selectedIndex];
+  if(opt.value){
+    document.getElementById('emp-loc').textContent=opt.dataset.location||'Not Set';
+    document.getElementById('emp-dept').textContent=opt.dataset.dept||'—';
+    document.getElementById('emp-info').style.display='block';
+  } else {
+    document.getElementById('emp-info').style.display='none';
+  }
+}
+document.getElementById('transfer-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  document.getElementById('btn-text').style.display='none';
+  document.getElementById('btn-loader').style.display='inline-block';
+  const fd=new FormData(this);
+  const res=await fetch('/transfers/',{method:'POST',body:fd});
+  const d=await res.json();
+  const msg=document.getElementById('transfer-msg');
+  msg.style.display='block';
+  if(d.success){
+    msg.style.color='var(--green)';msg.textContent='✓ '+d.message;
+    showToast('// '+d.message);
+    setTimeout(()=>window.location.href='/approvals/',1500);
+  } else {
+    msg.style.color='var(--red)';msg.textContent='✗ '+d.error;
+    showToast('ERROR: '+d.error,'error');
+    document.getElementById('btn-text').style.display='inline';
+    document.getElementById('btn-loader').style.display='none';
+  }
+});
+</script>
+{% endblock %}

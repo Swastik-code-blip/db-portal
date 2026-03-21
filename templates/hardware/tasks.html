@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}— Tasks{% endblock %}
+{% block nav_tasks %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="color:var(--green);">TASKS</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// MANAGE TEAM TASKS</div>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('add-task-modal')">+ ADD TASK</button>
+</div>
+
+<!-- TASK STATUS TABS -->
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
+  <button onclick="filterTasks('')" class="btn btn-ghost" id="f-all" style="border-color:var(--accent);color:var(--accent);">ALL ({{ tasks|length }})</button>
+  <button onclick="filterTasks('open')" class="btn btn-ghost" id="f-open">OPEN</button>
+  <button onclick="filterTasks('in_progress')" class="btn btn-ghost" id="f-progress">IN PROGRESS</button>
+  <button onclick="filterTasks('done')" class="btn btn-ghost" id="f-done">DONE</button>
+</div>
+
+<div style="display:flex;flex-direction:column;gap:10px;" id="tasks-container">
+{% for task in tasks %}
+<div class="card task-item" data-status="{{ task.status }}" style="padding:18px;border-left:3px solid {% if task.priority == 'urgent' %}var(--red){% elif task.priority == 'high' %}var(--amber){% elif task.priority == 'medium' %}var(--accent){% else %}var(--muted){% endif %};">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
+    <div style="flex:1;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
+        <div style="font-size:15px;font-weight:700;">{{ task.title }}</div>
+        <span class="badge badge-{{ task.status }}">{{ task.status|upper }}</span>
+        <span style="font-family:'Share Tech Mono',monospace;font-size:9px;color:{% if task.priority == 'urgent' %}var(--red){% elif task.priority == 'high' %}var(--amber){% else %}var(--muted){% endif %};">{{ task.priority|upper }}</span>
+      </div>
+      {% if task.description %}<div style="font-size:13px;color:var(--muted);margin-bottom:6px;">{{ task.description }}</div>{% endif %}
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">
+        {% if task.assigned_to %}👤 {{ task.assigned_to.username }}{% endif %}
+        {% if task.due_date %} · 📅 Due: {{ task.due_date }}{% endif %}
+        {% if task.location %} · 📍 {{ task.location }}{% endif %}
+        · Created: {{ task.created_at|date:"d M Y" }}
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center;">
+      <select class="filter-select" style="font-size:11px;" onchange="updateTask({{ task.pk }},this.value)">
+        <option value="open" {% if task.status == 'open' %}selected{% endif %}>Open</option>
+        <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+        <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
+        <option value="cancelled" {% if task.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+      </select>
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="empty-state"><div class="empty-state-icon">📋</div><div class="empty-state-text">NO TASKS YET</div></div>
+{% endfor %}
+</div>
+
+<!-- ADD TASK MODAL -->
+<div class="modal-overlay" id="add-task-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('add-task-modal')">✕</button>
+    <div class="modal-title">📋 ADD TASK</div>
+    <form id="task-form">
+      {% csrf_token %}
+      <div class="form-group"><label class="form-label">Title *</label><input type="text" name="title" class="form-control" required></div>
+      <div class="form-group"><label class="form-label">Description</label><textarea name="description" class="form-control" rows="2"></textarea></div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select name="priority" class="form-control">
+            <option value="low">Low</option><option value="medium" selected>Medium</option>
+            <option value="high">High</option><option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Due Date</label><input type="date" name="due_date" class="form-control"></div>
+      </div>
+      <div class="grid-2">
+        <div class="form-group"><label class="form-label">Location</label><input type="text" name="location" class="form-control" placeholder="Leave blank for all"></div>
+        <div class="form-group">
+          <label class="form-label">Assign To</label>
+          <select name="assigned_to" class="form-control">
+            <option value="">-- Anyone --</option>
+            {% for u in users %}<option value="{{ u.pk }}">{{ u.username }} ({{ u.role }})</option>{% endfor %}
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="margin-top:8px;">CREATE TASK</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function filterTasks(status) {
+  document.querySelectorAll('.task-item').forEach(t => {
+    t.style.display = (!status || t.dataset.status === status) ? 'block' : 'none';
+  });
+  document.querySelectorAll('[id^="f-"]').forEach(b => b.style.borderColor = 'var(--border)');
+  const btn = document.getElementById('f-' + (status || 'all'));
+  if(btn) btn.style.borderColor = 'var(--accent)';
+}
+
+async function updateTask(pk, status) {
+  const csrf = document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1];
+  const fd = new FormData(); fd.append('status', status); fd.append('csrfmiddlewaretoken', csrf);
+  const res = await fetch(`/tasks/${pk}/update/`, {method:'POST', body:fd});
+  const d = await res.json();
+  if(d.success) { showToast('// TASK UPDATED'); setTimeout(()=>location.reload(), 800); }
+  else showToast('ERROR', 'error');
+}
+
+document.getElementById('task-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fd = new FormData(this);
+  const res = await fetch('/tasks/create/', {method:'POST', body:fd});
+  const d = await res.json();
+  if(d.success) { showToast('// TASK CREATED'); closeModal('add-task-modal'); setTimeout(()=>location.reload(), 800); }
+  else showToast('ERROR: '+d.error, 'error');
+});
+</script>
+{% endblock %}

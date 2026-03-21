@@ -1,91 +1,131 @@
 {% extends "base.html" %}
 {% block title %}— {{ emp.name }}{% endblock %}
 {% block nav_employees %}active{% endblock %}
-
 {% block content %}
 <div class="page-header">
   <div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:6px;letter-spacing:2px;">// EMPLOYEE PROFILE</div>
-    <div class="page-title">{{ emp.name }}</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);letter-spacing:2px;margin-bottom:4px;">// EMPLOYEE PROFILE</div>
+    <div class="page-title" style="color:var(--accent3);">{{ emp.name }}</div>
   </div>
-  <span style="font-family:'Share Tech Mono',monospace;font-size:14px;color:var(--accent3);">{{ emp.emp_id }}</span>
-</div>
-
-<div style="display:grid;grid-template-columns:300px 1fr;gap:20px;">
-  <!-- PROFILE CARD -->
-  <div>
-    <div class="card corner-dec" style="padding:24px;text-align:center;margin-bottom:16px;">
-      <div style="width:80px;height:80px;border-radius:50%;background:rgba(168,85,247,0.15);border:3px solid var(--accent3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:28px;font-weight:900;color:var(--accent3);margin:0 auto 16px;">
-        {{ emp.name|first|upper }}
-      </div>
-      <div style="font-family:'Orbitron',monospace;font-size:16px;margin-bottom:4px;">{{ emp.name }}</div>
-      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:12px;">{{ emp.designation }}</div>
-      <span class="badge" style="background:rgba(168,85,247,0.15);color:var(--accent3);border:1px solid rgba(168,85,247,0.3);">{{ emp.department }}</span>
-    </div>
-
-    <div class="card" style="padding:20px;">
-      <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:2px;margin-bottom:14px;">CONTACT</div>
-      <div style="display:flex;flex-direction:column;gap:12px;">
-        <div>
-          <div class="detail-key">Employee ID</div>
-          <div style="font-family:'Share Tech Mono',monospace;color:var(--accent);">{{ emp.emp_id }}</div>
-        </div>
-        <div>
-          <div class="detail-key">Email</div>
-          <div style="color:var(--accent);font-size:13px;">{{ emp.email }}</div>
-        </div>
-        <div>
-          <div class="detail-key">Phone</div>
-          <div>{{ emp.phone }}</div>
-        </div>
-        <div>
-          <div class="detail-key">Joined</div>
-          <div style="font-family:'Share Tech Mono',monospace;font-size:12px;">{{ emp.joined_date }}</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ASSIGNED HARDWARE -->
-  <div>
-    <div style="font-family:'Orbitron',monospace;font-size:14px;color:var(--accent);letter-spacing:2px;margin-bottom:16px;">
-      ASSIGNED HARDWARE
-      <span style="color:var(--muted);font-size:12px;">({{ assigned_hw|length }} UNITS)</span>
-    </div>
-    {% if assigned_hw %}
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;">
-      {% for hw in assigned_hw %}
-      <a href="/hardware/{{ hw.pk }}/" style="text-decoration:none;">
-        <div class="card" style="padding:18px;transition:all 0.2s;cursor:pointer;" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='';this.style.transform=''">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-            <div class="hw-icon hw-{{ hw.hardware_type }}" style="font-size:20px;width:40px;height:40px;">
-              {% if hw.hardware_type == "Laptop" %}💻{% elif hw.hardware_type == "Camera" %}📷{% elif hw.hardware_type == "Printer" %}🖨️{% elif hw.hardware_type == "Monitor" %}🖥️{% elif hw.hardware_type == "Mouse" %}🖱️{% elif hw.hardware_type == "Keyboard" %}⌨️{% elif hw.hardware_type == "Scanner" %}📠{% elif hw.hardware_type == "CPU" %}🔧{% elif hw.hardware_type == "Server" %}🗄️{% endif %}
-            </div>
-            <div>
-              <span class="badge badge-{{ hw.hardware_type|lower }}" style="font-size:9px;">{{ hw.hardware_type }}</span>
-              <span class="badge badge-{{ hw.status }}" style="font-size:9px;margin-left:4px;">{{ hw.status }}</span>
-            </div>
-          </div>
-          <div style="font-weight:700;margin-bottom:2px;">{{ hw.brand }} {{ hw.model_name }}</div>
-          <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">{{ hw.hw_id }}</div>
-          {% if hw.specifications %}
-          <div style="margin-top:8px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);padding-top:8px;">{{ hw.specifications|truncatechars:60 }}</div>
-          {% endif %}
-          <div style="margin-top:8px;font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">S/N: {{ hw.serial_number }}</div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    {% else %}
-    <div class="empty-state">
-      <div class="empty-state-icon">▣</div>
-      <div class="empty-state-text">NO HARDWARE ASSIGNED TO THIS EMPLOYEE</div>
-    </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <span style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent3);">{{ emp.emp_id }}</span>
+    <span class="badge badge-{{ emp.status }}">{{ emp.status }}</span>
+    {% if emp.emp_id_changed %}
+    <span class="badge" style="background:rgba(255,180,0,0.1);color:var(--amber);border:1px solid rgba(255,180,0,0.3);">ID CHANGED</span>
+    {% endif %}
+    {% if user.can_edit and emp.status == 'active' %}
+    <button class="btn btn-danger" style="font-size:10px;padding:5px 10px;" onclick="openModal('fire-modal')">🔥 FIRE</button>
+    {% endif %}
+    {% if user.can_edit and emp.status != 'active' %}
+    <button class="btn btn-green" style="font-size:10px;padding:5px 10px;" onclick="empAction('reactivate')">✓ REACTIVATE</button>
+    {% endif %}
+    {% if user.can_edit %}
+    <a href="/transfers/" class="btn btn-purple" style="font-size:10px;padding:5px 10px;">🔄 TRANSFER</a>
     {% endif %}
   </div>
 </div>
 
-<div style="margin-top:20px;">
-  <a href="/employees/" class="btn btn-ghost">← BACK TO EMPLOYEES</a>
+<div style="display:grid;grid-template-columns:1fr 2fr;gap:18px;align-items:start;">
+
+  <!-- LEFT — Profile card -->
+  <div>
+    <div class="card" style="padding:24px;text-align:center;margin-bottom:14px;">
+      <div style="width:70px;height:70px;border-radius:50%;background:rgba(168,85,247,0.15);border:2px solid var(--accent3);display:flex;align-items:center;justify-content:center;font-family:'Orbitron',monospace;font-size:26px;font-weight:900;color:var(--accent3);margin:0 auto 14px;">{{ emp.first_name|first|upper }}</div>
+      <div style="font-weight:700;font-size:16px;">{{ emp.name }}</div>
+      {% if emp.designation %}<div style="font-size:13px;color:var(--muted);margin-top:3px;">{{ emp.designation }}</div>{% endif %}
+      {% if emp.department %}<div style="margin-top:8px;"><span class="badge badge-active">{{ emp.department }}</span></div>{% endif %}
+    </div>
+
+    <div class="card" style="padding:18px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:12px;">// CONTACT</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;">
+        <div><div class="detail-key">Employee ID</div><div style="font-family:'Share Tech Mono',monospace;color:var(--accent);">{{ emp.emp_id }}</div></div>
+        {% if emp.previous_emp_id %}<div><div class="detail-key">Previous ID</div><div style="color:var(--amber);font-family:'Share Tech Mono',monospace;">{{ emp.previous_emp_id }}</div></div>{% endif %}
+        {% if emp.email %}<div><div class="detail-key">Email</div><div><a href="mailto:{{ emp.email }}" style="color:var(--accent3);text-decoration:none;">{{ emp.email }}</a></div></div>{% endif %}
+        {% if emp.phone %}<div><div class="detail-key">Phone</div><div>{{ emp.phone }}</div></div>{% endif %}
+        {% if emp.joining_date %}<div><div class="detail-key">Joined</div><div>{{ emp.joining_date }}</div></div>{% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT — Details -->
+  <div style="display:flex;flex-direction:column;gap:14px;">
+
+    <!-- Org info -->
+    <div class="card" style="padding:20px;">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;margin-bottom:14px;">// ORGANIZATION INFO</div>
+      <div class="detail-grid">
+        <div class="detail-row"><div class="detail-key">State</div><div class="detail-val">{{ emp.state|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Center Name</div><div class="detail-val">{{ emp.center_name|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Office Type</div><div class="detail-val">{{ emp.office_type|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">User Type</div><div class="detail-val">{{ emp.user_type|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Department</div><div class="detail-val">{{ emp.department|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Designation</div><div class="detail-val">{{ emp.designation|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Grade</div><div class="detail-val" style="color:var(--accent);">{{ emp.grade|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Region</div><div class="detail-val">{{ emp.region|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Location</div><div class="detail-val" style="color:var(--accent3);">{{ emp.location|default:"—" }}</div></div>
+        <div class="detail-row"><div class="detail-key">Status</div><div class="detail-val"><span class="badge badge-{{ emp.status }}">{{ emp.status }}</span></div></div>
+      </div>
+    </div>
+
+    <!-- Assigned hardware -->
+    <div class="card" style="padding:20px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:2px;">// ASSIGNED HARDWARE ({{ assigned_hw|length }} UNITS)</div>
+      </div>
+      {% if assigned_hw %}
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        {% for hw in assigned_hw %}
+        <div style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:14px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <a href="/hardware/{{ hw.pk }}/" style="font-family:'Orbitron',monospace;font-size:13px;color:var(--accent);text-decoration:none;">{{ hw.hw_id }}</a>
+              <span class="badge badge-{{ hw.status }}">{{ hw.status }}</span>
+              <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">{{ hw.hardware_type }}</span>
+            </div>
+            <div style="font-size:13px;font-weight:700;margin-top:3px;">{{ hw.brand }} {{ hw.model_name }}</div>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:2px;">S/N: {{ hw.serial_number }}{% if hw.location %} · 📍 {{ hw.location }}{% endif %}</div>
+            {% for p in hw.properties.all|slice:":3" %}
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">{{ p.key }}: <span style="color:var(--text);">{{ p.value }}</span></div>
+            {% endfor %}
+          </div>
+          <a href="/hardware/{{ hw.pk }}/" class="btn btn-ghost" style="font-size:10px;padding:4px 10px;">VIEW →</a>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="empty-state" style="padding:30px 20px;">
+        <div class="empty-state-icon" style="font-size:32px;">◇</div>
+        <div class="empty-state-text">NO HARDWARE ASSIGNED</div>
+      </div>
+      {% endif %}
+    </div>
+
+  </div>
 </div>
+
+<!-- FIRE MODAL -->
+<div class="modal-overlay" id="fire-modal">
+  <div class="modal" style="border-color:var(--red);">
+    <button class="modal-close" onclick="closeModal('fire-modal')">✕</button>
+    <div class="modal-title" style="color:var(--red);">🔥 FIRE EMPLOYEE</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--amber);margin-bottom:16px;padding:10px;background:rgba(255,180,0,0.06);border-radius:5px;">⚠ All hardware assigned to {{ emp.name }} will be unassigned!</div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-danger" onclick="empAction('fire')">🔥 CONFIRM FIRE</button>
+      <button class="btn btn-ghost" onclick="closeModal('fire-modal')">CANCEL</button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+async function empAction(action) {
+  const csrf = document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1];
+  const fd = new FormData(); fd.append('action', action); fd.append('csrfmiddlewaretoken', csrf);
+  const res = await fetch('/employees/{{ emp.pk }}/action/', {method:'POST', body:fd});
+  const d = await res.json();
+  if(d.success){showToast('// '+d.message);closeModal('fire-modal');setTimeout(()=>location.reload(),1200);}
+  else showToast('ERROR: '+d.error,'error');
+}
+</script>
 {% endblock %}

@@ -114,7 +114,41 @@
     </div>
   </div>
 </div>
-<div style="margin-top:18px;"><a href="/hardware/" class="btn btn-ghost">← BACK TO INVENTORY</a></div>
+<div style="margin-top:18px;display:flex;gap:10px;flex-wrap:wrap;">
+  <a href="/hardware/" class="btn btn-ghost">← BACK TO INVENTORY</a>
+  {% if user.can_edit %}
+  <button class="btn btn-danger" onclick="openModal('trash-modal')">⊗ SEND TO TRASH</button>
+  {% endif %}
+</div>
+
+<!-- SEND TO TRASH MODAL -->
+<div class="modal-overlay" id="trash-modal">
+  <div class="modal" style="border-color:var(--red);">
+    <button class="modal-close" onclick="closeModal('trash-modal')">✕</button>
+    <div class="modal-title" style="color:var(--red);">⊗ SEND TO TRASH</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--amber);margin-bottom:16px;padding:10px;background:rgba(255,180,0,0.06);border-radius:5px;">⚠ This will permanently remove the hardware from inventory and move it to Trash Zone!</div>
+    <form id="trash-send-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label class="form-label">Reason *</label>
+        <input type="text" name="reason" class="form-control" placeholder="Why is this being trashed?" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Condition</label>
+        <select name="condition" class="form-control">
+          <option value="Dead">Dead (Non-functional)</option>
+          <option value="Damaged">Damaged (Physically broken)</option>
+          <option value="Obsolete">Obsolete (Too old)</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button type="submit" class="btn btn-danger">⊗ CONFIRM TRASH</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('trash-modal')">CANCEL</button>
+      </div>
+    </form>
+  </div>
+</div>
 {% endblock %}
 {% block extra_scripts %}
 <script>
@@ -139,5 +173,15 @@ async function changeStatus(newStatus) {
     showToast('ERROR: ' + d.error, 'error');
   }
 }
+
+document.getElementById('trash-send-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  if(!confirm('Are you sure? This cannot be undone!')) return;
+  const fd=new FormData(this);
+  const res=await fetch('/hardware/{{ hw.pk }}/trash/',{method:'POST',body:fd});
+  const d=await res.json();
+  if(d.success){showToast('// '+d.message);setTimeout(()=>window.location.href='/hardware/',1200);}
+  else showToast('ERROR: '+d.error,'error');
+});
 </script>
 {% endblock %}

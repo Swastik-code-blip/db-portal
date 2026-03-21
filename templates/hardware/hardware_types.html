@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}— Hardware Types{% endblock %}
+{% block nav_hwtypes %}active{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title">HARDWARE TYPES</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// ADD · EDIT · REMOVE HARDWARE CATEGORIES</div>
+  </div>
+  <button class="btn btn-primary" onclick="openModal('add-modal')">+ ADD TYPE</button>
+</div>
+
+<div class="card">
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Icon</th><th>Name</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for t in types %}
+        <tr>
+          <td style="font-size:24px;">{{ t.icon }}</td>
+          <td style="font-weight:700;font-size:15px;">{{ t.name }}</td>
+          <td>{% if t.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-inactive">Hidden</span>{% endif %}</td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px;" onclick="editType({{ t.pk }},'{{ t.name }}','{{ t.icon }}')">✎ EDIT</button>
+              <button class="btn btn-danger" style="font-size:10px;padding:4px 8px;" onclick="deleteType({{ t.pk }},'{{ t.name }}')">⊗ {% if t.is_active %}HIDE{% else %}SHOW{% endif %}</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('add-modal')">✕</button>
+    <div class="modal-title">ADD HARDWARE TYPE</div>
+    <form id="add-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="add">
+      <div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" name="icon" class="form-control" placeholder="📦" maxlength="5" value="📦"></div>
+      <div class="form-group"><label class="form-label">Type Name *</label><input type="text" name="name" class="form-control" placeholder="e.g. Tablet, Headset" required></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary">ADD TYPE</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('add-modal')">CANCEL</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('edit-modal')">✕</button>
+    <div class="modal-title">EDIT HARDWARE TYPE</div>
+    <form id="edit-form">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="edit">
+      <input type="hidden" name="id" id="edit-id">
+      <div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" name="icon" id="edit-icon" class="form-control" maxlength="5"></div>
+      <div class="form-group"><label class="form-label">Type Name *</label><input type="text" name="name" id="edit-name" class="form-control" required></div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button type="submit" class="btn btn-primary">SAVE CHANGES</button>
+        <button type="button" class="btn btn-ghost" onclick="closeModal('edit-modal')">CANCEL</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function getCsrf(){return document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1];}
+
+function editType(id,name,icon){
+  document.getElementById('edit-id').value=id;
+  document.getElementById('edit-name').value=name;
+  document.getElementById('edit-icon').value=icon;
+  openModal('edit-modal');
+}
+
+async function deleteType(id,name){
+  if(!confirm(`Hide/Show "${name}"?`)) return;
+  const fd=new FormData();fd.append('action','delete');fd.append('id',id);fd.append('csrfmiddlewaretoken',getCsrf());
+  const res=await fetch('/hardware/types/',{method:'POST',body:fd});
+  const d=await res.json();
+  if(d.success){showToast('// TYPE UPDATED');setTimeout(()=>location.reload(),800);}
+  else showToast('ERROR: '+d.error,'error');
+}
+
+document.getElementById('add-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const fd=new FormData(this);
+  const res=await fetch('/hardware/types/',{method:'POST',body:fd});
+  const d=await res.json();
+  if(d.success){showToast('// TYPE ADDED: '+d.name);closeModal('add-modal');setTimeout(()=>location.reload(),800);}
+  else showToast('ERROR: '+d.error,'error');
+});
+
+document.getElementById('edit-form').addEventListener('submit',async function(e){
+  e.preventDefault();
+  const fd=new FormData(this);
+  const res=await fetch('/hardware/types/',{method:'POST',body:fd});
+  const d=await res.json();
+  if(d.success){showToast('// TYPE UPDATED');closeModal('edit-modal');setTimeout(()=>location.reload(),800);}
+  else showToast('ERROR: '+d.error,'error');
+});
+</script>
+{% endblock %}
