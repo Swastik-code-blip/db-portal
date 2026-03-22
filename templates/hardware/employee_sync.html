@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}— Employee Sync{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="page-title" style="color:var(--amber);">📊 EMPLOYEE MASTER SYNC</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// MONTHLY SYNC — UPLOAD MASTER SHEET TO UPDATE ALL EMPLOYEES</div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<div style="background:rgba(0,245,255,0.04);border:1px solid rgba(0,245,255,0.15);border-radius:8px;padding:16px 20px;margin-bottom:22px;">
+  <div style="font-family:'Orbitron',monospace;font-size:12px;color:var(--accent);letter-spacing:2px;margin-bottom:10px;">HOW MONTHLY SYNC WORKS</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);line-height:2;letter-spacing:1px;">
+    ★ Upload updated Employee Master Sheet every month<br>
+    ★ Employees in sheet → Info updated automatically<br>
+    ★ Employees NOT in sheet → Marked as <span style="color:var(--amber);">UNMATCHED</span> (resigned/left)<br>
+    ★ Hardware assigned to unmatched employees → Shown below for reassignment<br>
+    ★ You can update hardware to new employee ID directly from this page
+  </div>
+</div>
+
+<!-- UPLOAD SECTION -->
+<div class="card" style="padding:22px;margin-bottom:24px;border-color:rgba(0,255,136,0.2);">
+  <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--green);letter-spacing:2px;margin-bottom:14px;">↑ UPLOAD EMPLOYEE MASTER SHEET</div>
+  <div style="border:2px dashed rgba(0,255,136,0.25);border-radius:8px;padding:20px;text-align:center;cursor:pointer;margin-bottom:14px;" onclick="document.getElementById('sync-file').click()">
+    <input type="file" id="sync-file" accept=".xlsx,.xls" style="display:none;" onchange="doSync()">
+    <div style="font-size:28px;margin-bottom:8px;">📊</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);">CLICK TO UPLOAD EMPLOYEE MASTER EXCEL</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--accent);margin-top:4px;">Columns: Emp ID · Name · Email · State · Center Name · Office Type · Department · Designation · Grade · Region · User Type · Location</div>
+  </div>
+  <div style="display:flex;gap:10px;">
+    <a href="/employees/template/" class="btn btn-ghost" style="font-size:11px;border-color:rgba(0,255,136,0.3);color:var(--green);">↓ DOWNLOAD TEMPLATE</a>
+  </div>
+  <div id="sync-result" style="display:none;margin-top:14px;padding:14px;background:var(--bg3);border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:11px;line-height:1.9;"></div>
+</div>
+
+<!-- UNMATCHED STATS -->
+{% if unmatched_hw_count > 0 or unmatched_emp_count > 0 %}
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px;">
+  <div class="stat-card" style="border-color:rgba(255,180,0,0.3);">
+    <div class="stat-value" style="color:var(--amber);">{{ unmatched_emp_count }}</div>
+    <div class="stat-label">UNMATCHED EMPLOYEES</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;">Not in last uploaded sheet</div>
+  </div>
+  <div class="stat-card" style="border-color:rgba(255,59,59,0.3);">
+    <div class="stat-value" style="color:var(--red);">{{ unmatched_hw_count }}</div>
+    <div class="stat-label">HARDWARE NEEDS REASSIGNMENT</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:4px;">Assigned to unmatched employees</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- UNMATCHED HARDWARE -->
+{% if unmatched_hardware %}
+<div class="card" style="padding:20px;border-color:rgba(255,59,59,0.2);">
+  <div style="font-family:'Orbitron',monospace;font-size:13px;color:var(--red);letter-spacing:2px;margin-bottom:16px;">⚠ HARDWARE WITH UNMATCHED EMPLOYEES — UPDATE EMPLOYEE ID</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>HW ID</th>
+          <th>Type</th>
+          <th>Brand / Model</th>
+          <th>Current Employee</th>
+          <th>Serial No</th>
+          <th>Update Employee ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for hw in unmatched_hardware %}
+        <tr>
+          <td><a href="/hardware/{{ hw.pk }}/" style="color:var(--accent);font-family:'Share Tech Mono',monospace;font-size:11px;">{{ hw.hw_id }}</a></td>
+          <td><span class="badge badge-inactive">{{ hw.hardware_type }}</span></td>
+          <td style="font-weight:700;">{{ hw.brand }} {{ hw.model_name }}</td>
+          <td>
+            <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--amber);">{{ hw.assigned_to.emp_id }}</div>
+            <div style="font-size:12px;">{{ hw.assigned_to.name }}</div>
+            <span class="badge badge-inactive" style="font-size:8px;">UNMATCHED</span>
+          </td>
+          <td style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);">{{ hw.serial_number }}</td>
+          <td>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <input type="text" id="new-emp-{{ hw.pk }}" class="form-control" 
+                placeholder="New Emp ID..." 
+                style="width:120px;padding:5px 8px;font-size:12px;"
+                list="emp-list">
+              <button class="btn btn-green" style="font-size:10px;padding:5px 10px;" onclick="updateHwEmp({{ hw.pk }})">UPDATE</button>
+              <button class="btn btn-ghost" style="font-size:10px;padding:5px 10px;" onclick="unassignHw({{ hw.pk }})">UNASSIGN</button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Employee search datalist -->
+  <datalist id="emp-list">
+    {% for emp in active_employees %}<option value="{{ emp.emp_id }}">{{ emp.emp_id }} — {{ emp.name }}</option>{% endfor %}
+  </datalist>
+
+  <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+    <a href="/employees/export-left/" class="btn btn-ghost" style="font-size:11px;">↓ EXPORT UNMATCHED AS CSV</a>
+  </div>
+</div>
+{% else %}
+<div class="empty-state" style="padding:40px;">
+  <div class="empty-state-icon">✅</div>
+  <div class="empty-state-text">ALL HARDWARE IS PROPERLY ASSIGNED</div>
+  <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-top:8px;">Upload master sheet above to check for unmatched employees</div>
+</div>
+{% endif %}
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function getCsrf() {
+  var c = document.cookie.split(';');
+  for (var i=0; i<c.length; i++) {
+    var p = c[i].trim();
+    if (p.startsWith('csrftoken=')) return p.split('=')[1];
+  }
+  return '';
+}
+
+async function doSync() {
+  var file = document.getElementById('sync-file').files[0];
+  if (!file) return;
+  var fd = new FormData();
+  fd.append('excel_file', file);
+  fd.append('csrfmiddlewaretoken', getCsrf());
+  showToast('// SYNCING EMPLOYEES...', 'warn');
+  var box = document.getElementById('sync-result');
+  box.style.display = 'block';
+  box.style.color = 'var(--muted)';
+  box.textContent = 'Processing... please wait...';
+  var r = await fetch('/employees/sync/', {method:'POST', body:fd});
+  var d = await r.json();
+  if (d.success) {
+    box.style.color = 'var(--green)';
+    var msg = '✓ ' + d.message;
+    if (d.id_changed && d.id_changed.length) {
+      msg += '\n\n⚠ Employee ID Changes:\n' + d.id_changed.map(function(c){ return c.name + ': ' + c.old_id + ' → ' + c.new_id; }).join('\n');
+    }
+    box.textContent = msg;
+    showToast('// SYNC COMPLETE!');
+    if (d.unmatched > 0) {
+      setTimeout(function(){ location.reload(); }, 2000);
+    }
+  } else {
+    box.style.color = 'var(--red)';
+    box.textContent = '✗ ERROR: ' + d.error;
+    showToast('SYNC FAILED', 'error');
+  }
+}
+
+async function updateHwEmp(hwPk) {
+  var newEmpId = document.getElementById('new-emp-' + hwPk).value.trim();
+  if (!newEmpId) { showToast('Enter new Employee ID!', 'error'); return; }
+  var fd = new FormData();
+  fd.append('action', 'update_hw_emp');
+  fd.append('hw_pk', hwPk);
+  fd.append('new_emp_id', newEmpId);
+  fd.append('csrfmiddlewaretoken', getCsrf());
+  var r = await fetch('/employees/sync/', {method:'POST', body:fd});
+  var d = await r.json();
+  if (d.success) { showToast('// ' + d.message); setTimeout(function(){ location.reload(); }, 1000); }
+  else showToast('ERROR: ' + d.error, 'error');
+}
+
+async function unassignHw(hwPk) {
+  var fd = new FormData();
+  fd.append('action', 'update_hw_emp');
+  fd.append('hw_pk', hwPk);
+  fd.append('new_emp_id', '');
+  fd.append('csrfmiddlewaretoken', getCsrf());
+  // Just unassign
+  var r = await fetch('/hardware/' + hwPk + '/edit/', {method:'POST', body:(function(){ var f=new FormData(); f.append('csrfmiddlewaretoken',getCsrf()); f.append('assigned_to',''); return f; })()});
+  showToast('// HARDWARE UNASSIGNED');
+  setTimeout(function(){ location.reload(); }, 800);
+}
+</script>
+{% endblock %}

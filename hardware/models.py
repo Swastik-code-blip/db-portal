@@ -15,6 +15,7 @@ class HardwareType(models.Model):
     icon = models.CharField(max_length=10, default='📦')
     order = models.IntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    custom_fields = models.TextField(blank=True, default='', help_text='JSON list of field names for this hardware type')
 
     class Meta:
         ordering = ['order', 'name']

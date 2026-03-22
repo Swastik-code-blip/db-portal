@@ -346,7 +346,15 @@ def hardware_types_manage(request):
         elif action == 'delete':
             try:
                 ht = get_object_or_404(HardwareType, pk=request.POST.get('id'))
-                ht.is_active = False
+                ht.is_active = not ht.is_active  # TOGGLE
+                ht.save()
+                return JsonResponse({'success':True, 'is_active': ht.is_active})
+            except Exception as e:
+                return JsonResponse({'success':False,'error':str(e)})
+        elif action == 'save_fields':
+            try:
+                ht = get_object_or_404(HardwareType, pk=request.POST.get('id'))
+                ht.custom_fields = request.POST.get('fields','')
                 ht.save()
                 return JsonResponse({'success':True})
             except Exception as e:
@@ -1453,3 +1461,167 @@ def messages_list(request):
 def messages_unread_count(request):
     count = Message.objects.filter(recipient=request.user, is_read=False).count()
     return JsonResponse({'count': count})
+
+# ─── EMPLOYEE MASTER SYNC ────────────────────────────────────────────────────
+
+@editor_required  
+def employee_master_sync(request):
+    """
+    Monthly employee master sync:
+    - Upload new employee master sheet
+    - Employees not in sheet get flagged as 'unmatched'  
+    - Hardware assigned to unmatched employees gets flagged
+    - Shows list of unmatched assets with option to update employee ID
+    """
+    if request.method == 'POST':
+        action = request.POST.get('action','')
+        
+        # ── UPDATE HARDWARE EMPLOYEE ID ──────────────────────────────────────
+        if action == 'update_hw_emp':
+            hw_pk = request.POST.get('hw_pk')
+            new_emp_id = request.POST.get('new_emp_id','').strip()
+            try:
+                hw = Hardware.objects.get(pk=hw_pk)
+                try:
+                    emp = Employee.objects.get(emp_id=new_emp_id)
+                    hw.assigned_to = emp
+                    hw.save()
+                    return JsonResponse({'success': True, 'message': f'Hardware {hw.hw_id} assigned to {emp.name}'})
+                except Employee.DoesNotExist:
+                    return JsonResponse({'success': False, 'error': f'Employee {new_emp_id} not found'})
+            except Hardware.DoesNotExist:
+                return JsonResponse({'success': False, 'error': 'Hardware not found'})
+        
+        # ── UPLOAD MASTER SHEET ───────────────────────────────────────────────
+        try:
+            import openpyxl
+        except ImportError:
+            return JsonResponse({'success': False, 'error': 'openpyxl not installed'})
+        
+        f = request.FILES.get('excel_file')
+        if not f:
+            return JsonResponse({'success': False, 'error': 'No file uploaded'})
+        
+        try:
+            wb = openpyxl.load_workbook(f, data_only=True)
+            ws = wb.active
+            headers = [str(ws.cell(1, c).value or '').strip().lower() for c in range(1, ws.max_column+1)]
+            
+            def safe(val):
+                if val is None: return ''
+                return str(val).strip()
+            
+            def col(row, *names):
+                for name in names:
+                    if name in headers:
+                        idx = headers.index(name)
+                        if idx < len(row) and row[idx] is not None:
+                            return safe(row[idx])
+                return ''
+            
+            # Collect all emp IDs from uploaded sheet
+            sheet_emp_ids = set()
+            added = 0; updated = 0; id_changed = []
+            
+            for row_idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+                if not any(row): continue
+                emp_id = col(row, 'emp id', 'employee id', 'empid')
+                if not emp_id: continue
+                sheet_emp_ids.add(emp_id)
+                
+                name = col(row, 'name', 'full name', 'employee name', 'emp name')
+                email = col(row, 'gmail / email', 'gmail', 'email')
+                state = col(row, 'state')
+                center = col(row, 'center name', 'center')
+                office_t = col(row, 'office type')
+                dept = col(row, 'department')
+                desig = col(row, 'designation')
+                grade = col(row, 'grade')
+                region = col(row, 'region (state/corp)', 'region')
+                utype = col(row, 'user type (user/backup/tba/stock)', 'user type')
+                location = col(row, 'location')
+                
+                first_name = name.split(' ',1)[0] if name else emp_id
+                last_name = name.split(' ',1)[1] if name and ' ' in name else ''
+                
+                existing = None
+                if email:
+                    existing = Employee.objects.filter(email=email).first()
+                
+                if existing:
+                    old_id = existing.emp_id
+                    if existing.emp_id != emp_id:
+                        existing.previous_emp_id = old_id
+                        existing.emp_id = emp_id
+                        existing.emp_id_changed = True
+                        id_changed.append({'name': existing.name, 'old_id': old_id, 'new_id': emp_id})
+                    existing.first_name = first_name or existing.first_name
+                    existing.last_name = last_name or existing.last_name
+                    if state: existing.state = state
+                    if center: existing.center_name = center
+                    if office_t: existing.office_type = office_t
+                    if dept: existing.department = dept
+                    if desig: existing.designation = desig
+                    if grade: existing.grade = grade
+                    if region: existing.region = region
+                    if utype: existing.user_type = utype
+                    if location: existing.location = location
+                    existing.status = 'active'
+                    existing.save()
+                    updated += 1
+                elif Employee.objects.filter(emp_id=emp_id).exists():
+                    emp = Employee.objects.get(emp_id=emp_id)
+                    emp.status = 'active'
+                    if first_name: emp.first_name = first_name
+                    if last_name: emp.last_name = last_name
+                    if state: emp.state = state
+                    if center: emp.center_name = center
+                    if office_t: emp.office_type = office_t
+                    if dept: emp.department = dept
+                    if desig: emp.designation = desig
+                    if grade: emp.grade = grade
+                    if region: emp.region = region
+                    if utype: emp.user_type = utype
+                    if location: emp.location = location
+                    emp.save()
+                    updated += 1
+                else:
+                    Employee.objects.create(
+                        emp_id=emp_id, first_name=first_name, last_name=last_name,
+                        email=email, state=state, center_name=center,
+                        office_type=office_t, department=dept, designation=desig,
+                        grade=grade, region=region, user_type=utype, location=location,
+                    )
+                    added += 1
+            
+            # Mark employees NOT in sheet as unmatched (inactive)
+            unmatched_count = 0
+            if sheet_emp_ids:
+                unmatched_qs = Employee.objects.filter(status='active').exclude(emp_id__in=sheet_emp_ids)
+                unmatched_count = unmatched_qs.count()
+                unmatched_qs.update(status='inactive')
+            
+            return JsonResponse({
+                'success': True,
+                'added': added, 'updated': updated,
+                'unmatched': unmatched_count,
+                'id_changed': id_changed,
+                'message': f'Sync complete! Added: {added}, Updated: {updated}, Unmatched (not in sheet): {unmatched_count}'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    # GET - show sync page with unmatched assets
+    unmatched_employees = Employee.objects.filter(status='inactive').prefetch_related('assigned_hardware')
+    unmatched_hardware = Hardware.objects.filter(
+        assigned_to__status='inactive'
+    ).select_related('assigned_to').order_by('hardware_type')
+    
+    active_employees = Employee.objects.filter(status='active').order_by('emp_id')[:500]
+    return render(request, 'hardware/employee_sync.html', {
+        'unmatched_employees': unmatched_employees,
+        'unmatched_hardware': unmatched_hardware,
+        'unmatched_hw_count': unmatched_hardware.count(),
+        'unmatched_emp_count': unmatched_employees.count(),
+        'active_employees': active_employees,
+    })

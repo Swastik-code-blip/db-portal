@@ -24,6 +24,7 @@ urlpatterns = [
     path('employees/', views.employee_list, name='employee_list'),
     path('employees/add/', views.employee_add, name='employee_add'),
     path('employees/import/', views.employee_bulk_import, name='employee_bulk_import'),
+    path('employees/sync/', views.employee_master_sync, name='employee_master_sync'),
     path('employees/template/', views.export_employee_template, name='employee_template'),
     path('employees/export-left/', views.export_fired_resigned_csv, name='export_left_employees'),
     path('employees/<int:pk>/', views.employee_detail, name='employee_detail'),

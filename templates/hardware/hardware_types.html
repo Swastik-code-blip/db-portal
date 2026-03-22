@@ -1,11 +1,19 @@
+{% load custom_filters %}
 {% extends "base.html" %}
 {% block title %}— Hardware Types{% endblock %}
 {% block nav_hwtypes %}active{% endblock %}
+{% block extra_head %}
+<style>
+.field-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:rgba(0,245,255,0.08);border:1px solid rgba(0,245,255,0.2);border-radius:4px;font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);margin:3px;}
+.field-tag button{background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:0;line-height:1;}
+.field-input-row{display:flex;gap:8px;margin-top:10px;}
+</style>
+{% endblock %}
 {% block content %}
 <div class="page-header">
   <div>
     <div class="page-title">HARDWARE TYPES</div>
-    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// ADD · EDIT · REMOVE HARDWARE CATEGORIES</div>
+    <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted);margin-top:4px;letter-spacing:2px;">// MANAGE HARDWARE CATEGORIES & THEIR FIELDS</div>
   </div>
   <button class="btn btn-primary" onclick="openModal('add-modal')">+ ADD TYPE</button>
 </div>
@@ -13,17 +21,44 @@
 <div class="card">
   <div class="table-wrap">
     <table>
-      <thead><tr><th>Icon</th><th>Name</th><th>Status</th><th>Actions</th></tr></thead>
+      <thead>
+        <tr>
+          <th>Icon</th>
+          <th>Name</th>
+          <th>Custom Fields</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
       <tbody>
         {% for t in types %}
         <tr>
           <td style="font-size:24px;">{{ t.icon }}</td>
           <td style="font-weight:700;font-size:15px;">{{ t.name }}</td>
-          <td>{% if t.is_active %}<span class="badge badge-active">Active</span>{% else %}<span class="badge badge-inactive">Hidden</span>{% endif %}</td>
           <td>
-            <div style="display:flex;gap:6px;">
-              <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px;" onclick="editType({{ t.pk }},'{{ t.name }}','{{ t.icon }}')">✎ EDIT</button>
-              <button class="btn btn-danger" style="font-size:10px;padding:4px 8px;" onclick="deleteType({{ t.pk }},'{{ t.name }}')">⊗ {% if t.is_active %}HIDE{% else %}SHOW{% endif %}</button>
+            {% if t.custom_fields %}
+              {% for field in t.custom_fields|split:"," %}
+                {% if field %}
+                <span style="display:inline-block;padding:2px 8px;background:rgba(0,245,255,0.06);border:1px solid rgba(0,245,255,0.15);border-radius:3px;font-family:'Share Tech Mono',monospace;font-size:9px;color:var(--accent);margin:2px;">{{ field|strip }}</span>
+                {% endif %}
+              {% endfor %}
+            {% else %}
+              <span style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);">No custom fields</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if t.is_active %}
+              <span class="badge badge-active">Active</span>
+            {% else %}
+              <span class="badge badge-inactive">Hidden</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px;" onclick="openEditModal({{ t.pk }},'{{ t.name }}','{{ t.icon }}','{{ t.custom_fields|escapejs }}')">✎ EDIT</button>
+              <button class="btn btn-ghost" style="font-size:10px;padding:4px 8px;{% if t.is_active %}color:var(--amber);border-color:rgba(255,180,0,0.3);{% else %}color:var(--green);border-color:rgba(0,255,136,0.3);{% endif %}" onclick="toggleType({{ t.pk }},this)">
+                {% if t.is_active %}⊗ HIDE{% else %}✓ SHOW{% endif %}
+              </button>
             </div>
           </td>
         </tr>
@@ -37,12 +72,20 @@
 <div class="modal-overlay" id="add-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('add-modal')">✕</button>
-    <div class="modal-title">ADD HARDWARE TYPE</div>
+    <div class="modal-title">+ ADD HARDWARE TYPE</div>
     <form id="add-form">
       {% csrf_token %}
       <input type="hidden" name="action" value="add">
-      <div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" name="icon" class="form-control" placeholder="📦" maxlength="5" value="📦"></div>
-      <div class="form-group"><label class="form-label">Type Name *</label><input type="text" name="name" class="form-control" placeholder="e.g. Tablet, Headset" required></div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Icon (Emoji)</label>
+          <input type="text" name="icon" class="form-control" placeholder="📦" maxlength="5" value="📦">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type Name *</label>
+          <input type="text" name="name" class="form-control" placeholder="e.g. Tablet, Headset" required>
+        </div>
+      </div>
       <div style="display:flex;gap:10px;margin-top:8px;">
         <button type="submit" class="btn btn-primary">ADD TYPE</button>
         <button type="button" class="btn btn-ghost" onclick="closeModal('add-modal')">CANCEL</button>
@@ -53,59 +96,154 @@
 
 <!-- EDIT MODAL -->
 <div class="modal-overlay" id="edit-modal">
-  <div class="modal">
+  <div class="modal" style="max-width:580px;">
     <button class="modal-close" onclick="closeModal('edit-modal')">✕</button>
-    <div class="modal-title">EDIT HARDWARE TYPE</div>
+    <div class="modal-title">✎ EDIT HARDWARE TYPE</div>
     <form id="edit-form">
       {% csrf_token %}
       <input type="hidden" name="action" value="edit">
       <input type="hidden" name="id" id="edit-id">
-      <div class="form-group"><label class="form-label">Icon (Emoji)</label><input type="text" name="icon" id="edit-icon" class="form-control" maxlength="5"></div>
-      <div class="form-group"><label class="form-label">Type Name *</label><input type="text" name="name" id="edit-name" class="form-control" required></div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Icon (Emoji)</label>
+          <input type="text" name="icon" id="edit-icon" class="form-control" maxlength="5">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Type Name *</label>
+          <input type="text" name="name" id="edit-name" class="form-control" required>
+        </div>
+      </div>
       <div style="display:flex;gap:10px;margin-top:8px;">
-        <button type="submit" class="btn btn-primary">SAVE CHANGES</button>
+        <button type="submit" class="btn btn-primary">SAVE NAME & ICON</button>
         <button type="button" class="btn btn-ghost" onclick="closeModal('edit-modal')">CANCEL</button>
       </div>
     </form>
+
+    <!-- CUSTOM FIELDS SECTION -->
+    <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--border);">
+      <div style="font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:2px;margin-bottom:10px;">// CUSTOM FIELDS FOR THIS TYPE</div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);margin-bottom:10px;">These fields will appear when adding hardware of this type</div>
+
+      <!-- Current fields -->
+      <div id="fields-list" style="min-height:36px;padding:6px;background:var(--bg3);border-radius:6px;border:1px solid var(--border);margin-bottom:12px;"></div>
+
+      <!-- Add new field -->
+      <div class="field-input-row">
+        <input type="text" id="new-field-input" class="form-control" placeholder="e.g. Speed MBPS, Screen Size, IP Address..." style="flex:1;">
+        <button type="button" class="btn btn-green" style="font-size:11px;" onclick="addField()">+ ADD FIELD</button>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:10px;">
+        <button type="button" class="btn btn-primary" onclick="saveFields()">💾 SAVE FIELDS</button>
+        <div style="font-family:'Share Tech Mono',monospace;font-size:10px;color:var(--muted);display:flex;align-items:center;">Changes saved separately</div>
+      </div>
+    </div>
   </div>
 </div>
+
 {% endblock %}
 {% block extra_scripts %}
 <script>
-function getCsrf(){return document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1];}
+var _editPk = null;
+var _currentFields = [];
 
-function editType(id,name,icon){
-  document.getElementById('edit-id').value=id;
-  document.getElementById('edit-name').value=name;
-  document.getElementById('edit-icon').value=icon;
+function getCsrf() {
+  var c = document.cookie.split(';');
+  for (var i=0; i<c.length; i++) {
+    var p = c[i].trim();
+    if (p.startsWith('csrftoken=')) return p.split('=')[1];
+  }
+  return '';
+}
+
+// ── ADD TYPE ──────────────────────────────────────────────────────────────────
+document.getElementById('add-form').addEventListener('submit', async function(e) {
+  e.preventDefault();
+  var fd = new FormData(this);
+  var r = await fetch('/hardware/types/', {method:'POST', body:fd});
+  var d = await r.json();
+  if (d.success) { showToast('// TYPE ADDED: ' + d.name); closeModal('add-modal'); setTimeout(()=>location.reload(), 800); }
+  else showToast('ERROR: ' + d.error, 'error');
+});
+
+// ── EDIT TYPE ─────────────────────────────────────────────────────────────────
+function openEditModal(pk, name, icon, fields) {
+  _editPk = pk;
+  document.getElementById('edit-id').value = pk;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-icon').value = icon;
+  // Parse fields
+  _currentFields = fields ? fields.split(',').map(f => f.trim()).filter(f => f) : [];
+  renderFields();
+  document.getElementById('new-field-input').value = '';
   openModal('edit-modal');
 }
 
-async function deleteType(id,name){
-  if(!confirm(`Hide/Show "${name}"?`)) return;
-  const fd=new FormData();fd.append('action','delete');fd.append('id',id);fd.append('csrfmiddlewaretoken',getCsrf());
-  const res=await fetch('/hardware/types/',{method:'POST',body:fd});
-  const d=await res.json();
-  if(d.success){showToast('// TYPE UPDATED');setTimeout(()=>location.reload(),800);}
-  else showToast('ERROR: '+d.error,'error');
+function renderFields() {
+  var box = document.getElementById('fields-list');
+  if (!_currentFields.length) {
+    box.innerHTML = '<span style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--muted);">No custom fields — add some below</span>';
+    return;
+  }
+  box.innerHTML = _currentFields.map(function(f, i) {
+    return '<span class="field-tag">' + f + 
+      '<button onclick="removeField(' + i + ')" title="Remove">✕</button></span>';
+  }).join('');
 }
 
-document.getElementById('add-form').addEventListener('submit',async function(e){
-  e.preventDefault();
-  const fd=new FormData(this);
-  const res=await fetch('/hardware/types/',{method:'POST',body:fd});
-  const d=await res.json();
-  if(d.success){showToast('// TYPE ADDED: '+d.name);closeModal('add-modal');setTimeout(()=>location.reload(),800);}
-  else showToast('ERROR: '+d.error,'error');
+function addField() {
+  var inp = document.getElementById('new-field-input');
+  var val = inp.value.trim();
+  if (!val) return;
+  if (_currentFields.indexOf(val) > -1) { showToast('Field already exists!', 'warn'); return; }
+  _currentFields.push(val);
+  renderFields();
+  inp.value = '';
+  inp.focus();
+}
+
+// Allow Enter to add field
+document.getElementById('new-field-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); addField(); }
 });
 
-document.getElementById('edit-form').addEventListener('submit',async function(e){
+function removeField(idx) {
+  _currentFields.splice(idx, 1);
+  renderFields();
+}
+
+async function saveFields() {
+  var fd = new FormData();
+  fd.append('action', 'save_fields');
+  fd.append('id', _editPk);
+  fd.append('fields', _currentFields.join(','));
+  fd.append('csrfmiddlewaretoken', getCsrf());
+  var r = await fetch('/hardware/types/', {method:'POST', body:fd});
+  var d = await r.json();
+  if (d.success) { showToast('// FIELDS SAVED!'); setTimeout(()=>location.reload(), 800); }
+  else showToast('ERROR: ' + d.error, 'error');
+}
+
+document.getElementById('edit-form').addEventListener('submit', async function(e) {
   e.preventDefault();
-  const fd=new FormData(this);
-  const res=await fetch('/hardware/types/',{method:'POST',body:fd});
-  const d=await res.json();
-  if(d.success){showToast('// TYPE UPDATED');closeModal('edit-modal');setTimeout(()=>location.reload(),800);}
-  else showToast('ERROR: '+d.error,'error');
+  var fd = new FormData(this);
+  var r = await fetch('/hardware/types/', {method:'POST', body:fd});
+  var d = await r.json();
+  if (d.success) { showToast('// TYPE UPDATED'); setTimeout(()=>location.reload(), 800); closeModal('edit-modal'); }
+  else showToast('ERROR: ' + d.error, 'error');
 });
+
+// ── TOGGLE HIDE/SHOW ──────────────────────────────────────────────────────────
+async function toggleType(pk, btn) {
+  var fd = new FormData();
+  fd.append('action', 'delete');
+  fd.append('id', pk);
+  fd.append('csrfmiddlewaretoken', getCsrf());
+  var r = await fetch('/hardware/types/', {method:'POST', body:fd});
+  var d = await r.json();
+  if (d.success) {
+    showToast(d.is_active ? '// TYPE SHOWN' : '// TYPE HIDDEN');
+    setTimeout(()=>location.reload(), 600);
+  } else showToast('ERROR: ' + d.error, 'error');
+}
 </script>
 {% endblock %}
