@@ -239,9 +239,17 @@ async function confirmDecline() {
   fd.append('note', document.getElementById('decline-note').value);
   fd.append('csrfmiddlewaretoken', getCsrf());
   var r = await fetch(_dUrl, {method:'POST', body:fd});
-  var d = await r.json();
-  if (d.success) { closeModal('decline-modal'); showToast('// DECLINED'); setTimeout(function(){ location.reload(); }, 1000); }
-  else showToast('ERROR: ' + d.error, 'error');
+  var ct = r.headers.get('content-type') || '';
+  if (ct.indexOf('application/json') > -1) {
+    var d = await r.json();
+    if (d.success) { closeModal('decline-modal'); showToast('// DECLINED'); setTimeout(function(){ location.reload(); }, 800); }
+    else showToast('ERROR: ' + d.error, 'error');
+  } else {
+    // Got a redirect response - it worked!
+    closeModal('decline-modal');
+    showToast('// DECLINED');
+    setTimeout(function(){ location.reload(); }, 800);
+  }
 }
 
 // ── HW SEARCH ────────────────────────────────────────────────────────────────

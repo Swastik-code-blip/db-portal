@@ -884,18 +884,24 @@ def resignation_review(request, pk):
         if action == 'approve':
             res.status='approved'
             res.save()
-            # Mark employee as resigned
             try:
                 emp=Employee.objects.get(emp_id=res.emp_id)
                 emp.status='resigned'
                 emp.save()
                 Hardware.objects.filter(assigned_to=emp).update(assigned_to=None)
             except Employee.DoesNotExist: pass
-            return JsonResponse({'success':True,'message':'Resignation approved. Employee marked as resigned.'})
+            # Return JSON for AJAX, redirect for normal form
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success':True,'message':'Resignation approved. Employee marked as resigned.'})
+            from django.shortcuts import redirect
+            return redirect('/approvals/?tab=resign')
         elif action == 'decline':
             res.status='declined'
             res.save()
-            return JsonResponse({'success':True,'message':'Resignation declined.'})
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success':True,'message':'Resignation declined.'})
+            from django.shortcuts import redirect
+            return redirect('/approvals/?tab=resign')
     return render(request,'hardware/resignation_detail.html',{'res':res})
 
 # ─── TRASH ────────────────────────────────────────────────────────────────────
@@ -951,6 +957,17 @@ def user_toggle(request, pk):
     if user==request.user: return JsonResponse({'success':False,'error':'Cannot deactivate yourself'})
     user.is_active=not user.is_active; user.save()
     return JsonResponse({'success':True,'active':user.is_active})
+
+@superadmin_required
+def user_delete(request, pk):
+    if request.method == 'POST':
+        user = get_object_or_404(CustomUser, pk=pk)
+        if user == request.user:
+            return JsonResponse({'success': False, 'error': 'Cannot delete yourself'})
+        username = user.username
+        user.delete()
+        return JsonResponse({'success': True, 'message': f'User {username} deleted.'})
+    return JsonResponse({'success': False})
 
 @superadmin_required
 def user_role_change(request, pk):
@@ -1152,7 +1169,10 @@ def transfer_review(request, pk):
                     f"Transfer Approved: {tr.employee.name}",
                     f"Transfer of {tr.employee.name} to {tr.to_location} has been APPROVED. Note: {note}",
                     msg_type='transfer', sender_name=request.user.username, related_id=tr.pk)
-            return JsonResponse({'success': True, 'message': f'{tr.employee.name} transferred to {tr.to_location}', 'note': note})
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': f'{tr.employee.name} transferred to {tr.to_location}'})
+            from django.shortcuts import redirect
+            return redirect('/approvals/?tab=transfer')
         elif action == 'decline':
             tr.status = 'declined'
             tr.save()
@@ -1161,7 +1181,10 @@ def transfer_review(request, pk):
                     f"Transfer Declined: {tr.employee.name}",
                     f"Transfer of {tr.employee.name} to {tr.to_location} has been DECLINED. Reason: {note}",
                     msg_type='transfer', sender_name=request.user.username, related_id=tr.pk)
-            return JsonResponse({'success': True, 'message': 'Transfer declined.', 'note': note, 'declined': True})
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'success': True, 'message': 'Transfer declined.', 'note': note, 'declined': True})
+            from django.shortcuts import redirect
+            return redirect('/approvals/?tab=transfer')
     return JsonResponse({'success': False})
 
 @csrf_exempt

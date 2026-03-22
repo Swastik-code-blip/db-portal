@@ -252,7 +252,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelec
 function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('overlay').classList.toggle('show');}
 
 // Message badge polling with popup notification
-let lastMsgCount = 0;
+let lastMsgCount = -1;
 async function checkMessages(){
   try{
     const r=await fetch('/api/messages/unread/');
@@ -262,17 +262,16 @@ async function checkMessages(){
       if(d.count>0){b.textContent=d.count;b.style.display='inline';}
       else{b.style.display='none';}
     }
-    // Show toast if new messages arrived
-    if(d.count > lastMsgCount && lastMsgCount >= 0){
+    // Only toast if genuinely new messages came AFTER page load
+    if(lastMsgCount >= 0 && d.count > lastMsgCount){
       const diff = d.count - lastMsgCount;
-      if(lastMsgCount > 0 || document.readyState === 'complete'){
-        showToast('📬 ' + diff + ' new message' + (diff>1?'s':'') + '! Check Messages tab.', 'warn');
-      }
+      showToast('📬 ' + diff + ' new message' + (diff>1?'s':'') + '!', 'warn');
     }
     lastMsgCount = d.count;
   }catch(e){}
 }
-setTimeout(()=>{ checkMessages(); setInterval(checkMessages,20000); }, 2000);
+// Wait 3 sec after load to set baseline, then check every 30 sec
+setTimeout(function(){ checkMessages(); setInterval(checkMessages, 30000); }, 3000);
 function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show');}
 </script>
 {% block extra_scripts %}{% endblock %}
