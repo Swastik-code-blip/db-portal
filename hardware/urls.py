@@ -61,6 +61,7 @@ urlpatterns = [
     path('api/search/', views.employee_search_api, name='employee_search_api'),
     path('api/stats/', views.stats_api, name='stats_api'),
     path('api/auto-fetch/', views.auto_fetch_api, name='auto_fetch_api'),
+    path('admin/clear-data/', views.clear_all_data, name='clear_all_data'),
     path('messages/', views.messages_list, name='messages_list'),
     path('api/messages/unread/', views.messages_unread_count, name='messages_unread'),
 ]

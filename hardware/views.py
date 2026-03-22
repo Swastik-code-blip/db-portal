@@ -1625,3 +1625,17 @@ def employee_master_sync(request):
         'unmatched_emp_count': unmatched_employees.count(),
         'active_employees': active_employees,
     })
+
+@superadmin_required
+def clear_all_data(request):
+    if request.method == 'POST':
+        confirm = request.POST.get('confirm','')
+        if confirm == 'DELETE ALL':
+            from django.db import connection
+            HardwareProperty.objects.all().delete()
+            Hardware.objects.all().delete()
+            Employee.objects.all().delete()
+            TrashHardware.objects.all().delete()
+            return JsonResponse({'success': True, 'message': 'All hardware and employee data cleared!'})
+        return JsonResponse({'success': False, 'error': 'Type DELETE ALL to confirm'})
+    return JsonResponse({'success': False})
