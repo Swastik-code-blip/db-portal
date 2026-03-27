@@ -22,15 +22,20 @@
   <form id="transfer-form">
     {% csrf_token %}
     <div class="form-group">
-      <label class="form-label">Select Employee *</label>
-      <select name="employee_id" class="form-control" required id="emp-select" onchange="showEmpInfo(this)">
-        <option value="">-- Select Employee --</option>
+      <label class="form-label">Select Employee — Type ID or Name to search *</label>
+      <input type="text" id="emp-search-inp" class="form-control" 
+        placeholder="Type Employee ID or Name..." 
+        autocomplete="off"
+        oninput="empFilter(this.value)"
+        onfocus="empFilter(this.value)">
+      <input type="hidden" name="employee_id" id="emp-select" required>
+      <div id="emp-dropdown" style="background:var(--bg2);border:1px solid var(--accent);border-radius:6px;margin-top:4px;max-height:220px;overflow-y:auto;display:none;position:absolute;width:calc(100% - 48px);z-index:999;"></div>
+      <!-- All employees data -->
+      <div id="emp-data" style="display:none;">
         {% for emp in employees %}
-        <option value="{{ emp.pk }}" data-location="{{ emp.location }}" data-dept="{{ emp.department }}">
-          {{ emp.emp_id }} — {{ emp.name }} ({{ emp.location|default:"No Location" }})
-        </option>
+        <span data-pk="{{ emp.pk }}" data-id="{{ emp.emp_id }}" data-name="{{ emp.name }}" data-loc="{{ emp.location }}" data-dept="{{ emp.department }}"></span>
         {% endfor %}
-      </select>
+      </div>
     </div>
     <div id="emp-info" style="display:none;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:12px;margin-bottom:14px;font-family:'Share Tech Mono',monospace;font-size:11px;">
       <div>Current Location: <span id="emp-loc" style="color:var(--accent);"></span></div>
@@ -65,6 +70,57 @@
 {% endblock %}
 {% block extra_scripts %}
 <script>
+// Build employee list from hidden data
+var empList = [];
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('#emp-data span').forEach(function(el) {
+    empList.push({
+      pk: el.dataset.pk,
+      id: el.dataset.id,
+      name: el.dataset.name,
+      loc: el.dataset.loc,
+      dept: el.dataset.dept
+    });
+  });
+});
+
+function empFilter(q) {
+  var drop = document.getElementById('emp-dropdown');
+  var ql = q.toLowerCase();
+  var filtered = empList.filter(function(e) {
+    return !q || e.id.toLowerCase().includes(ql) || e.name.toLowerCase().includes(ql);
+  });
+  if (!filtered.length) { drop.style.display='none'; return; }
+  drop.innerHTML = filtered.slice(0,50).map(function(e) {
+    return '<div style="padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);" ' +
+      'onmouseover="this.style.background='rgba(0,245,255,0.06)'" ' +
+      'onmouseout="this.style.background=''" ' +
+      'onclick="pickEmp(''+e.pk+'',''+e.id+'',''+e.name.replace(/'/g,'')+'',''+e.loc+'',''+e.dept+'')">' +
+      '<span style="font-family:Share Tech Mono,monospace;font-size:10px;color:var(--accent);">' + e.id + '</span> — ' + e.name +
+      '<span style="font-size:10px;color:var(--muted);"> (' + (e.loc||'No Location') + ')</span>' +
+    '</div>';
+  }).join('');
+  drop.style.display = 'block';
+}
+
+function pickEmp(pk, empId, name, loc, dept) {
+  document.getElementById('emp-select').value = pk;
+  document.getElementById('emp-search-inp').value = empId + ' — ' + name;
+  document.getElementById('emp-dropdown').style.display = 'none';
+  // Show info
+  document.getElementById('emp-loc').textContent = loc || 'N/A';
+  document.getElementById('emp-dept').textContent = dept || 'N/A';
+  document.getElementById('emp-info').style.display = 'block';
+}
+
+document.addEventListener('click', function(e) {
+  var drop = document.getElementById('emp-dropdown');
+  var inp = document.getElementById('emp-search-inp');
+  if (drop && inp && !inp.contains(e.target) && !drop.contains(e.target)) {
+    drop.style.display = 'none';
+  }
+});
+
 function showEmpInfo(sel){
   const opt=sel.options[sel.selectedIndex];
   if(opt.value){

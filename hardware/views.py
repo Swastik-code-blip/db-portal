@@ -446,43 +446,103 @@ def import_hardware_excel(request):
                     except: pass
 
                     if is_sno:
-                        # Type-specific sheet import
-                        detected_type = hw_type_post or "Other"
+                        # ── Detect type from sheet name first, then headers ──
+                        sheet_name = ws.title.strip().lower()
                         h_str = " ".join(headers)
-                        if "printer" in h_str: detected_type = "Printer"
-                        elif "processor" in h_str or "laptop" in h_str: detected_type = "Laptop"
-                        elif "dvr" in h_str or "nvr" in h_str or "camera" in h_str: detected_type = "CCTV"
-                        elif "isp" in h_str or "circuit" in h_str: detected_type = "ILL/BB"
-                        elif "dt / tc" in h_str or "dt/tc" in h_str: detected_type = "Desktop"
 
-                        prefix = detected_type.replace("/","")[:4].upper()
-                        hw_id = f"{prefix}-{row_idx:04d}"
-                        serial = f"IMP-{prefix}-{row_idx:04d}"
+                        if hw_type_post:
+                            detected_type = hw_type_post
+                        elif "desktop" in sheet_name or "dt / tc" in h_str or "dt/tc" in h_str or "hostname" in h_str:
+                            detected_type = "Desktop"
+                        elif "laptop" in sheet_name or "laptop" in h_str:
+                            detected_type = "Laptop"
+                        elif "printer" in sheet_name or "printer" in h_str:
+                            detected_type = "Printer"
+                        elif "cctv" in sheet_name or "dvr" in h_str or "nvr" in h_str:
+                            detected_type = "CCTV"
+                        elif "ill" in sheet_name or "isp" in h_str or "circuit" in h_str:
+                            detected_type = "ILL/BB"
+                        elif "processor" in h_str or "ram" in h_str:
+                            detected_type = "Laptop"
+                        else:
+                            detected_type = "Other"
 
+                        prefix_map = {
+                            "Laptop": "LAPT", "Desktop": "DESK", "Printer": "PRIN",
+                            "CCTV": "CCTV", "ILL/BB": "ILLB", "Server": "SERV",
+                            "Scanner": "SCAN", "TV": "TV", "Mouse": "MOUS",
+                            "Keyboard": "KEYB", "Switch": "SWCH", "Other": "OTHR",
+                        }
+                        prefix = prefix_map.get(detected_type, detected_type[:4].upper())
+
+                        # ── Get REAL serial from CSV ──
+                        serial_raw = ""
+                        for sk in ["serial no", "serial no.", "serial number", "sr no", "sr. no", "serial"]:
+                            v = get_col(row, sk)
+                            if v and safe_str(v) not in ["", "None", "nan"]:
+                                serial_raw = safe_str(v)
+                                break
+
+                        # ── Get real HW ID from SAP/Asset code ──
+                        sap_raw = ""
+                        for ak in ["sap asset code", "sap code(dt)", "sap code", "asset code"]:
+                            v = get_col(row, ak)
+                            if v and safe_str(v) not in ["", "None", "nan"]:
+                                sap_raw = safe_str(v)
+                                break
+
+                        # Build hw_id
+                        if sap_raw:
+                            hw_id = f"{prefix}-{sap_raw}"
+                        else:
+                            hw_id = f"{prefix}-{row_idx:04d}"
+                        # Ensure unique
+                        base_hw_id = hw_id
+                        counter = 1
                         while Hardware.objects.filter(hw_id=hw_id).exists():
-                            hw_id = hw_id + "X"
+                            hw_id = f"{base_hw_id}-{counter}"
+                            counter += 1
+
+                        # Build serial
+                        if serial_raw:
+                            serial = serial_raw
+                        else:
+                            serial = f"{prefix}-SN-{row_idx:04d}"
+                        # Ensure unique serial
+                        base_serial = serial
+                        counter = 1
                         while Hardware.objects.filter(serial_number=serial).exists():
-                            serial = serial + "X"
+                            serial = f"{base_serial}-{counter}"
+                            counter += 1
 
                         location = ""
-                        for lk in ["location","state","it engineer location","link location"]:
+                        for lk in ["user location", "center name", "location", "state", "asset location"]:
                             lv = get_col(row, lk)
-                            if lv:
+                            if lv and safe_str(lv) not in ["", "None", "nan"]:
                                 location = safe_str(lv)
                                 break
                         if request.user.has_location_filter:
                             location = request.user.location
 
-                        brand = safe_str(get_col(row,"make") or get_col(row,"brand") or get_col(row,"isp name") or get_col(row,"nvr/dvr company name") or "Imported")
-                        model = safe_str(get_col(row,"model") or get_col(row,"suggested model") or get_col(row,"nvr/dvr model number") or "Imported")
+                        brand = safe_str(get_col(row,"make") or get_col(row,"brand") or get_col(row,"isp name") or "Imported")
+                        model = safe_str(get_col(row,"model") or get_col(row,"suggested model") or "Imported")
+                        price = safe_float(get_col(row,"price without gst") or get_col(row,"cost approx") or 0)
 
-                        price = safe_float(get_col(row,"cost approx") or get_col(row,"yearly cost") or 0)
+                        # Get employee
+                        emp_id_val = safe_str(get_col(row,"emp id") or get_col(row,"empl id") or "")
+                        assigned_emp = None
+                        if emp_id_val:
+                            try:
+                                assigned_emp = Employee.objects.get(emp_id=emp_id_val)
+                            except Employee.DoesNotExist:
+                                pass
 
                         hw = Hardware.objects.create(
                             hw_id=hw_id, hardware_type=detected_type,
                             brand=brand or "Imported", model_name=model or "Imported",
                             serial_number=serial, purchase_date=date.today(),
                             price=price, status="active", location=location,
+                            assigned_to=assigned_emp,
                             notes=f"Imported from Excel row {row_idx}",
                             created_by=request.user,
                         )

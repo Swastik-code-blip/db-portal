@@ -121,7 +121,7 @@
 {% endblock %}
 {% block extra_scripts %}
 <script>
-function getCsrf(){ return document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')).split('=')[1]; }
+function getCsrf(){ var c=document.cookie.split(';').find(c=>c.trim().startsWith('csrftoken=')); return c?c.split('=')[1]:''; }
 
 async function toggleUser(pk, btn){
   const res = await fetch(`/users/${pk}/toggle/`,{method:'POST',headers:{'X-CSRFToken':getCsrf()}});
