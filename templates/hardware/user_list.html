@@ -161,7 +161,7 @@ async function doClear() {
   var fd = new FormData();
   fd.append('confirm', 'DELETE ALL');
   fd.append('csrfmiddlewaretoken', getCsrf());
-  var r = await fetch('/admin/clear-data/', {method:'POST', body:fd});
+  var r = await fetch('/users/clear-all-data/', {method:'POST', body:fd});
   var d = await r.json();
   if (d.success) {
     closeModal('clear-modal');
